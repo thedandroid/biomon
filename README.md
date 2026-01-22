@@ -1,8 +1,51 @@
 # BIOMON
 
+[![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D14.0.0-brightgreen.svg)](https://nodejs.org/)
+[![Tests](https://img.shields.io/badge/tests-67%20passing-brightgreen.svg)](https://github.com/thedandroid/biomon)
+
 > **Biological Monitoring System** — A Weyland-Yutani medical terminal for tracking crew vitals, stress, and panic responses in *Alien RPG* games.
 
 A lightweight, diegetic party status tracker with an integrated **Stress & Panic Roller** for *Alien RPG*. Styled as a retro medical console with real-time ECG animations and atmospheric Weyland-Yutani theming.
+
+---
+
+## Table of Contents
+
+- [Screenshots](#screenshots)
+- [Features](#features)
+- [Quick Start](#quick-start)
+- [How It Works](#how-it-works)
+- [GM View — How to Use](#gm-view--how-to-use)
+- [Player View — What Players See](#player-view--what-players-see)
+- [Customization](#customization)
+- [Testing](#testing)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [License](#license)
+- [Contributing](#contributing)
+
+---
+
+## Screenshots
+
+### GM View
+
+The Game Master interface for managing players and triggering stress/panic rolls.
+
+![GM View](screenshots/gm-view.png)
+
+### Roller Panel
+
+Close-up of the integrated dice roller with automatic table lookup.
+
+![Roller Panel](screenshots/gm-roller.png)
+
+### Player View
+
+What players see - their crew's vitals with real-time ECG animations and effect indicators.
+
+![Player View](screenshots/player-view.png)
 
 ---
 
@@ -188,3 +231,54 @@ This project is free to use, modify, and share for non-commercial purposes. See 
 ## Contributing
 
 Issues and pull requests welcome! See [`AGENTS.md`](AGENTS.md) for coding guidelines.
+
+### Development
+
+```bash
+# Install dependencies
+npm install
+
+# Run tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run linter
+npm run lint
+
+# Auto-fix lint issues
+npm run lint:fix
+```
+
+---
+
+## FAQ
+
+### Can I use this for online games?
+
+Yes! Just forward port 3050 or deploy to a server. Players connect via your server's URL.
+
+### Does it work with other RPG systems?
+
+The core concept works for any game with stress/panic mechanics. You'd need to customize the tables in `responseTables.js` to match your system's rules.
+
+### What happens if the server restarts?
+
+State is stored in-memory, so it resets. Consider exporting state periodically if running long sessions.
+
+### Can I customize the look?
+
+Absolutely! Edit `public/styles.css` to change colors, fonts, and styling. The Weyland-Yutani medical terminal theme is fully customizable.
+
+---
+
+## Acknowledgments
+
+Built for the *Alien RPG* community. Weyland-Yutani aesthetic inspired by the Alien franchise.
+
+---
+
+## Support
+
+Found a bug? Have a feature request? [Open an issue](https://github.com/thedandroid/biomon/issues) on GitHub!
