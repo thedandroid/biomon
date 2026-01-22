@@ -1,63 +1,190 @@
 # BIOMON
 
-**Biological Monitoring System** - A Weyland-Yutani medical terminal for tracking crew vitals, stress, and panic responses in Alien RPG games.
+> **Biological Monitoring System** — A Weyland-Yutani medical terminal for tracking crew vitals, stress, and panic responses in *Alien RPG* games.
 
-A lightweight diegetic (medical console vibe) party status tracker with an integrated **Stress & Panic Roller** for Alien RPG Evolved.
+A lightweight, diegetic party status tracker with an integrated **Stress & Panic Roller** for *Alien RPG*. Styled as a retro medical console with real-time ECG animations and atmospheric Weyland-Yutani theming.
 
-## Rules summary (implemented)
+---
 
-- **Stress Dice** (from skill checks) can show one or more **1s**.
-  - If **any Stress Die shows 1**, that triggers **one Stress Roll event** (not an automatic panic roll).
-  - Multiple 1s still mean **one** Stress Roll for that check.
-- **Panic Rolls are only made when the GM explicitly calls for one.**
-- **Stress Rolls and Panic Rolls use the same formula:**
+## Features
 
-$$\text{total} = d6 + \text{current\_stress} - \text{resolve} + \text{situational\_modifiers}$$
+- **Real-time crew monitoring** - Track health, stress, and resolve for all players
+- **Integrated dice roller** - Automated Stress and Panic rolls with table lookup
+- **Diegetic UI** - Medical terminal aesthetic with ECG waveforms
+- **GM & Player views** - Separate interfaces for game master and players
+- **Effect tracking** - Persistent panic/stress effects with visual indicators
+- **No database required** - In-memory state, zero setup complexity
 
-- The difference is only which table is consulted:
-  - **Stress Roll → Stress Table**
-  - **Panic Roll → Panic Table**
+---
 
-## How to run
+## Quick Start
 
-- Install deps: `npm install`
-- Start: `node server.js`
-- GM view: `http://localhost:3050/gm`
-- Player view: `http://localhost:3050/`
+### Installation
 
-## GM view — how to use the Roller
+```bash
+npm install
+```
 
-Each player has a **ROLLER** panel:
+### Running the Server
 
-- **STRESS ROLL**: click when a skill check’s Stress Dice include **one or more 1s**.
-- **PANIC ROLL**: click only when the GM calls for a panic roll.
-- **MOD**: situational modifiers (quick `-1/+1` and direct input).
-- Output shows `d6`, computed total, and the resolved table entry label + short description.
-- **APPLY**:
-  - Marks the roll as applied.
-  - If the table entry is marked persistent, it adds a persistent effect tag to the player.
-- **UNDO**: reverses the last Apply (clears the effect if one was created).
-- **ACTIVE EFFECTS**: persistent tags can be **CLEARED** manually.
+```bash
+npm start
+# or
+node server.js
+```
 
-## Player view — what players see
+### Access the App
 
-- When a roll happens, the affected player’s card shows a brief alert banner with the **effect label**.
-- Persistent effects show as **tags** (label only).
-- ECG animation changes:
-  - **Stress Roll**: subtle warning / mild disturbance
-  - **Panic Roll**: strong warning / large spike
-  - If a persistent panic-tagged effect is active, the card keeps a visible panic indicator until cleared.
+- **GM View**: [http://localhost:3050/gm](http://localhost:3050/gm)
+- **Player View**: [http://localhost:3050/](http://localhost:3050/)
 
-## Tables
+Default port is `3050` (override with `PORT` environment variable).
 
-The Stress/Panic tables live in:
+---
 
-- [responseTables.js](responseTables.js)
+## Game Rules (Implemented)
 
-This repo includes a **small placeholder set** (range-based entries). Fill in your preferred entries and tuning.
+### Stress Dice
 
-## Self-check
+- **Stress Dice** (from skill checks) can show one or more **1s**
+- If **any Stress Die shows 1**, that triggers **one Stress Roll event** (not an automatic panic roll)
+- Multiple 1s still mean **one** Stress Roll for that check
 
-- Run: `npm run selfcheck`
+### Panic Rolls
 
-This validates the placeholder tables resolve an entry for a range of totals.
+- **Panic Rolls are only made when the GM explicitly calls for one**
+
+### Roll Formula
+
+Both **Stress Rolls** and **Panic Rolls** use the same formula:
+
+```
+total = d6 + current_stress - resolve + situational_modifiers
+```
+
+The difference is which table is consulted:
+- **Stress Roll** → Stress Table
+- **Panic Roll** → Panic Table
+
+---
+
+## GM View — How to Use
+
+### Player Management
+
+Each player card displays:
+- **Name** and **ID**
+- **Health**, **Stress**, and **Resolve** sliders
+- **Active effects** (persistent panic/stress conditions)
+- **Roller panel** for triggering rolls
+
+### Roller Panel
+
+- **STRESS ROLL** — Click when a skill check's Stress Dice include **one or more 1s**
+- **PANIC ROLL** — Click only when the GM explicitly calls for a panic roll
+- **MOD** — Situational modifiers (quick `-1`/`+1` buttons and direct input)
+- **Output** — Shows `d6` result, computed total, and resolved table entry (label + short description)
+- **APPLY** — Marks the roll as applied; adds persistent effect tag if applicable
+- **UNDO** — Reverses the last Apply (clears the effect if one was created)
+- **ACTIVE EFFECTS** — Persistent tags can be manually **CLEARED**
+
+### Roll Feed
+
+- Live feed of all roll events
+- Shows player name, roll type, result, and effect
+- Limited to most recent rolls
+
+---
+
+## Player View — What Players See
+
+### Visual Feedback
+
+- When a roll happens, the affected player's card shows a **brief alert banner** with the effect label
+- Persistent effects show as **tags** (label only)
+- **ECG animation changes**:
+  - **Stress Roll** → Subtle warning / mild disturbance
+  - **Panic Roll** → Strong warning / large spike
+  - If a persistent panic-tagged effect is active, the card keeps a visible panic indicator until cleared
+
+### Privacy
+
+- Players see their own stats and effects
+- No access to GM controls or other players' hidden information
+
+---
+
+## Customization
+
+### Stress & Panic Tables
+
+The Stress/Panic tables are defined in [`responseTables.js`](responseTables.js).
+
+This repository includes a **small placeholder set** (range-based entries). You can customize:
+- Roll ranges (min/max)
+- Effect labels and descriptions
+- Persistent vs. temporary effects
+- Severity levels
+
+### Validation
+
+Run the self-check to validate your tables:
+
+```bash
+npm run selfcheck
+```
+
+This ensures all possible roll totals resolve to a valid table entry.
+
+---
+
+## Testing
+
+```bash
+npm test                 # Run all tests
+npm run test:watch       # Watch mode
+npm run test:coverage    # Coverage report
+npm run test:ui          # Interactive UI
+```
+
+**Test Framework**: Vitest with 67 tests covering utilities, table logic, and Socket.io integration.
+
+---
+
+## Tech Stack
+
+- **Backend**: Node.js, Express v5, Socket.io v4
+- **Frontend**: Vanilla JavaScript (no frameworks), HTML5, CSS3
+- **No TypeScript**: Pure JavaScript implementation
+- **No Build Tools**: Static file serving
+- **State**: In-memory (no database)
+
+---
+
+## Project Structure
+
+```
+biomon/
+├── server.js              # Express/Socket.io server
+├── responseTables.js      # Stress & Panic table definitions
+├── utils.js               # Shared utility functions
+├── public/                # Static frontend files
+│   ├── gm.html           # GM view
+│   ├── gm.js             # GM logic
+│   ├── player.html       # Player view
+│   ├── player.js         # Player logic + ECG animation
+│   └── styles.css        # Medical console theming
+└── test/                  # Test suite
+```
+
+---
+
+## License
+
+MIT
+
+---
+
+## Contributing
+
+Issues and pull requests welcome! See [`AGENTS.md`](AGENTS.md) for coding guidelines.
