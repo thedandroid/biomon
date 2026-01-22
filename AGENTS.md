@@ -1,10 +1,10 @@
-# Agent Guidelines for Party Visualizer Roller
+# Agent Guidelines for BIOMON
 
 This document provides coding agents with essential information about build commands, code style, and conventions for this repository.
 
 ## Project Overview
 
-**Party Vitals + Alien RPG Evolved Stress & Panic Roller** is a real-time web application for tracking party status in Alien RPG games. It uses:
+**BIOMON (Biological Monitoring System)** is a real-time web application for tracking crew vitals, stress, and panic responses in Alien RPG games. Styled as a Weyland-Yutani medical terminal, it uses:
 - **Backend**: Node.js with Express (v5.2.1) and Socket.io (v4.8.3)
 - **Frontend**: Vanilla JavaScript (no frameworks), HTML5, CSS3
 - **No TypeScript**: Pure JavaScript implementation
@@ -64,7 +64,7 @@ npm run lint:fix      # Auto-fix lint errors
 ## Project Structure
 
 ```
-party-visualizer-roller/
+biomon/
 ├── server.js              # Main Express/Socket.io server (432 lines)
 ├── responseTables.js      # Stress & Panic table definitions + lookup logic
 ├── utils.js               # Shared utility functions (clamp, newId, etc.)

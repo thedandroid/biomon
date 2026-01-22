@@ -1,4 +1,8 @@
 {
+  "name": "biomon",
+  "version": "1.0.0",
+  "description": "BIOMON - Alien RPG Crew Vitals & Stress Monitor",
+  "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "selfcheck": "node scripts/selfcheck.js",
@@ -10,6 +14,9 @@
     "lint:fix": "eslint . --fix",
     "prepare": "husky"
   },
+  "keywords": ["alien-rpg", "stress", "panic", "crew-monitor", "weyland-yutani"],
+  "author": "",
+  "license": "MIT",
   "lint-staged": {
     "*.js": [
       "eslint --fix"

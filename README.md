@@ -1,4 +1,6 @@
-# Party Vitals + Alien RPG Evolved Stress & Panic Roller
+# BIOMON
+
+**Biological Monitoring System** - A Weyland-Yutani medical terminal for tracking crew vitals, stress, and panic responses in Alien RPG games.
 
 A lightweight diegetic (medical console vibe) party status tracker with an integrated **Stress & Panic Roller** for Alien RPG Evolved.
 

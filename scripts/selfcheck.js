@@ -1,4 +1,4 @@
- 
+// BIOMON - Table Validation Script
 
 const { resolveEntry, STRESS_TABLE, PANIC_TABLE } = require("../responseTables");
 

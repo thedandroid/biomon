@@ -1,4 +1,5 @@
-// Party Stress + Health Visualizer
+// BIOMON - Biological Monitoring System
+// Alien RPG Crew Vitals & Stress Monitor
 // Run: npm i express socket.io
 // Start: node server.js
 // GM:     http://localhost:3050/gm
