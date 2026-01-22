@@ -30,11 +30,16 @@ node server.js
 
 ### Testing
 ```bash
-npm run selfcheck
-# or
-node scripts/selfcheck.js
+npm test                 # Run all tests
+npm run test:watch       # Run tests in watch mode
+npm run test:coverage    # Run tests with coverage report
+npm run test:ui          # Run tests with interactive UI
+npm run selfcheck        # Legacy table validation script
 ```
-**Note**: There is NO formal test framework (Jest, Mocha, etc.). The only test is `selfcheck.js` which validates stress/panic table structure and coverage.
+**Test Framework**: Vitest with 67 tests covering utilities, responseTables, and Socket.io integration.
+- **Coverage**: 93.33% on responseTables.js
+- **Test files**: Located in `test/` directory
+- See `test/README.md` for detailed testing guide
 
 ### Linting/Formatting
 **Note**: There are NO configured linters or formatters (no ESLint config, Prettier, etc.) at the project level. Code review is manual.
@@ -45,15 +50,22 @@ node scripts/selfcheck.js
 party-visualizer-roller/
 ├── server.js              # Main Express/Socket.io server (432 lines)
 ├── responseTables.js      # Stress & Panic table definitions + lookup logic
-├── package.json           # Minimal dependencies (express, socket.io)
+├── package.json           # Dependencies (express, socket.io, vitest)
+├── vitest.config.js       # Test configuration
 ├── public/                # Static frontend files
 │   ├── player.html       # Player view interface
 │   ├── player.js         # Player-side logic with ECG animation
 │   ├── gm.html           # Game Master view interface
 │   ├── gm.js             # GM control panel logic
 │   └── styles.css        # Medical console-themed styling
+├── test/                  # Test files (67 tests)
+│   ├── utils.test.js     # Utility function tests
+│   ├── responseTables.test.js  # Table logic tests
+│   ├── selfcheck.test.js # Validation tests
+│   ├── server.integration.test.js  # Socket.io tests
+│   └── README.md         # Testing guide
 └── scripts/
-    └── selfcheck.js      # Table validation utility
+    └── selfcheck.js      # Legacy table validation utility
 ```
 
 ## Code Style Guidelines
@@ -172,15 +184,34 @@ party-visualizer-roller/
 ## Testing Guidelines
 
 ### Current Testing
-- **Only test**: `scripts/selfcheck.js` validates table structure
-- **Manual testing**: Primary validation through UI interaction
-- **No unit tests**: Consider adding Jest/Mocha for future development
+- **Test Framework**: Vitest with v8 coverage
+- **67 tests**: Unit tests, integration tests, validation tests
+- **93.33% coverage** on responseTables.js
+- **Test location**: `test/` directory
+- See `test/README.md` for complete testing guide
 
-### Adding Tests (Future)
-- Keep tests in `scripts/` or create a `test/` directory
-- Use simple assertion functions (see `selfcheck.js:5-7`)
-- Test table resolution, clamping utilities, duplicate handling
-- Consider integration tests for Socket.io events
+### Test Categories
+- **Unit tests** (`test/utils.test.js`): Utility functions (clamp, clampInt, hasLiveEffect)
+- **Table tests** (`test/responseTables.test.js`): Entry resolution, lookup, validation
+- **Integration tests** (`test/server.integration.test.js`): Socket.io event handlers
+- **Validation tests** (`test/selfcheck.test.js`): Table coverage and structure
+
+### Writing New Tests
+```javascript
+import { describe, it, expect } from "vitest";
+
+describe("Feature Name", () => {
+  it("should do something specific", () => {
+    const result = someFunction(input);
+    expect(result).toBe(expected);
+  });
+});
+```
+
+### Running Tests
+- Run `npm test` before committing changes
+- Use `npm run test:watch` during development
+- Check coverage with `npm run test:coverage`
 
 ## Common Patterns
 

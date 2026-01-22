@@ -2,15 +2,18 @@
   "scripts": {
     "start": "node server.js",
     "selfcheck": "node scripts/selfcheck.js",
-    "test": "vitest",
+    "test": "vitest run",
     "test:watch": "vitest --watch",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "test:ui": "vitest --ui"
   },
   "dependencies": {
     "express": "^5.2.1",
     "socket.io": "^4.8.3"
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "^4.0.18",
+    "socket.io-client": "^4.8.3",
     "vitest": "^4.0.18"
   }
 }
