@@ -51,6 +51,16 @@ npm run lint:fix      # Auto-fix lint errors
 - **Auto-fix**: Most formatting issues can be auto-fixed with `npm run lint:fix`
 - **Browser globals**: Configured for frontend files in `public/`
 
+### Pre-commit Hooks
+**Git hooks** automatically run before each commit to ensure code quality:
+- **Husky**: Manages git hooks (`.husky/` directory)
+- **lint-staged**: Runs linter only on staged files (faster than full project lint)
+- **Pre-commit workflow**:
+  1. Runs `eslint --fix` on staged `.js` files (auto-fixes formatting)
+  2. Runs `npm test` (all 67 tests must pass)
+  3. If either fails, commit is blocked
+- **Bypass hook**: Use `git commit --no-verify` (not recommended)
+
 ## Project Structure
 
 ```
@@ -61,6 +71,8 @@ party-visualizer-roller/
 ├── package.json           # Dependencies (express, socket.io, vitest)
 ├── vitest.config.js       # Test configuration
 ├── eslint.config.js       # ESLint v9 flat config
+├── .husky/                # Git hooks managed by Husky
+│   └── pre-commit        # Pre-commit hook (lint + test)
 ├── public/                # Static frontend files
 │   ├── player.html       # Player view interface
 │   ├── player.js         # Player-side logic with ECG animation

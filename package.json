@@ -7,7 +7,13 @@
     "test:coverage": "vitest --coverage",
     "test:ui": "vitest --ui",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.js": [
+      "eslint --fix"
+    ]
   },
   "dependencies": {
     "express": "^5.2.1",
@@ -16,6 +22,8 @@
   "devDependencies": {
     "@vitest/coverage-v8": "^4.0.18",
     "eslint": "^9.39.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
     "socket.io-client": "^4.8.3",
     "vitest": "^4.0.18"
   }
