@@ -1,48 +1,23 @@
 // Integration tests for Socket.io event handlers
-// NOTE: These tests require additional setup and are currently skipped.
-// To enable: remove '.skip' from describe.skip below
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
 import { io as ioClient } from "socket.io-client";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import express from "express";
 import { resolveEntry, getEntryById } from "../responseTables.js";
-
-// Utility functions from server.js (these should be extracted to a module)
-function clamp(n, lo, hi) {
-  n = Number(n);
-  if (Number.isNaN(n)) return lo;
-  return Math.max(lo, Math.min(hi, n));
-}
-
-function clampInt(n, lo, hi) {
-  return clamp(Math.trunc(Number(n)), lo, hi);
-}
-
-function newId() {
-  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-}
-
-function hasLiveEffect(p, effectType) {
-  const type = String(effectType ?? "");
-  if (!type) return false;
-  const list = Array.isArray(p?.activeEffects) ? p.activeEffects : [];
-  return list.some((e) => !e?.clearedAt && String(e?.type ?? "") === type);
-}
-
-function ensurePlayerFields(p) {
-  if (!p) return;
-  if (p.maxHealth === undefined) p.maxHealth = 5;
-  if (p.health === undefined) p.health = clamp(p.health ?? p.maxHealth, 0, p.maxHealth);
-  if (p.stress === undefined) p.stress = 0;
-  if (p.resolve === undefined) p.resolve = 0;
-  if (!Array.isArray(p.activeEffects)) p.activeEffects = [];
-  if (p.lastRollEvent === undefined) p.lastRollEvent = null;
-}
-
-function d6() {
-  return Math.floor(Math.random() * 6) + 1;
-}
+import {
+  clamp,
+  clampInt,
+  newId,
+  ensurePlayerFields,
+  hasLiveEffect,
+  d6,
+  DEFAULT_MAX_HEALTH,
+  MAX_HEALTH_CAP,
+  MAX_STRESS,
+  MAX_RESOLVE,
+  ROLL_FEED_CAP,
+} from "../utils.js";
 
 function resolveNextHigherDifferentEntry(rollType, total, currentEntryId) {
   const startId = String(currentEntryId ?? "");
@@ -59,12 +34,6 @@ function resolveNextHigherDifferentEntry(rollType, total, currentEntryId) {
 describe("Socket.io integration tests", () => {
   let io, serverSocket, clientSocket, httpServer;
   let state;
-
-  const DEFAULT_MAX_HEALTH = 5;
-  const MAX_HEALTH_CAP = 10;
-  const MAX_STRESS = 10;
-  const MAX_RESOLVE = 10;
-  const ROLL_FEED_CAP = 200;
 
   function pushRollEvent(ev) {
     state.rollEvents.push(ev);

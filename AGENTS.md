@@ -50,6 +50,7 @@ npm run selfcheck        # Legacy table validation script
 party-visualizer-roller/
 ├── server.js              # Main Express/Socket.io server (432 lines)
 ├── responseTables.js      # Stress & Panic table definitions + lookup logic
+├── utils.js               # Shared utility functions (clamp, newId, etc.)
 ├── package.json           # Dependencies (express, socket.io, vitest)
 ├── vitest.config.js       # Test configuration
 ├── public/                # Static frontend files
@@ -79,6 +80,7 @@ party-visualizer-roller/
 - **Backend**: CommonJS (`require`/`module.exports`)
   ```javascript
   const { resolveEntry, getEntryById } = require("./responseTables");
+  const { clamp, clampInt, newId } = require("./utils");
   module.exports = { STRESS_TABLE, PANIC_TABLE, resolveEntry };
   ```
 - **Frontend**: No module system (scripts loaded via `<script>` tags)
@@ -215,6 +217,18 @@ describe("Feature Name", () => {
 
 ## Common Patterns
 
+### Utility Functions
+All shared utility functions are exported from `utils.js`:
+- `clamp(n, lo, hi)` - Clamps a number between bounds
+- `clampInt(n, lo, hi)` - Clamps and truncates to integer
+- `newId()` - Generates unique IDs
+- `ensurePlayerFields(p)` - Ensures player has all required fields
+- `hasLiveEffect(p, effectType)` - Checks for active effects
+- `d6()` - Rolls a six-sided die
+
+Constants also available from `utils.js`:
+- `DEFAULT_MAX_HEALTH`, `MAX_HEALTH_CAP`, `MAX_STRESS`, `MAX_RESOLVE`, `ROLL_FEED_CAP`
+
 ### ID Generation
 ```javascript
 function newId() {
@@ -240,6 +254,7 @@ function clamp(n, lo, hi) {
 ## File Modification Guidelines
 
 - **server.js**: Add new Socket.io handlers following existing pattern (validate → mutate → broadcast → log)
+- **utils.js**: Shared utility functions and constants used across the application
 - **responseTables.js**: Maintain table structure; update `selfcheck.js` when adding fields
 - **public/*.js**: Keep separation between GM and Player views; share utilities via copy (no shared module)
 - **styles.css**: Medical console theme (cyan/green colors, monospace font, retro aesthetic)

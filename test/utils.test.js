@@ -1,25 +1,5 @@
 import { describe, it, expect } from "vitest";
-
-// Since server.js functions aren't exported, we'll recreate them for testing
-// In the refactoring step, we'll extract these to a utils module
-
-// Utility functions from server.js
-function clamp(n, lo, hi) {
-  n = Number(n);
-  if (Number.isNaN(n)) return lo;
-  return Math.max(lo, Math.min(hi, n));
-}
-
-function clampInt(n, lo, hi) {
-  return clamp(Math.trunc(Number(n)), lo, hi);
-}
-
-function hasLiveEffect(p, effectType) {
-  const type = String(effectType ?? "");
-  if (!type) return false;
-  const list = Array.isArray(p?.activeEffects) ? p.activeEffects : [];
-  return list.some((e) => !e?.clearedAt && String(e?.type ?? "") === type);
-}
+import { clamp, clampInt, hasLiveEffect } from "../utils.js";
 
 describe("Server utility functions", () => {
   describe("clamp", () => {

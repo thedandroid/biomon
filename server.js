@@ -8,6 +8,19 @@ const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const { resolveEntry, getEntryById } = require("./responseTables");
+const {
+  clamp,
+  clampInt,
+  newId,
+  ensurePlayerFields,
+  hasLiveEffect,
+  d6,
+  DEFAULT_MAX_HEALTH,
+  MAX_HEALTH_CAP,
+  MAX_STRESS,
+  MAX_RESOLVE,
+  ROLL_FEED_CAP,
+} = require("./utils");
 
 const app = express();
 const server = http.createServer(app);
@@ -30,55 +43,11 @@ const state = {
   rollEvents: [],
 };
 
-const ROLL_FEED_CAP = 200;
-
-function clamp(n, lo, hi) {
-  n = Number(n);
-  if (Number.isNaN(n)) return lo;
-  return Math.max(lo, Math.min(hi, n));
-}
-
-const DEFAULT_MAX_HEALTH = 5;
-const MAX_HEALTH_CAP = 10;
-const MAX_STRESS = 10;
-const MAX_RESOLVE = 10;
-
-function ensurePlayerFields(p) {
-  if (!p) return;
-  if (p.maxHealth === undefined) p.maxHealth = DEFAULT_MAX_HEALTH;
-  if (p.health === undefined)
-    p.health = clamp(p.health ?? p.maxHealth, 0, p.maxHealth);
-  if (p.stress === undefined) p.stress = 0;
-  if (p.resolve === undefined) p.resolve = 0;
-  if (!Array.isArray(p.activeEffects)) p.activeEffects = [];
-  if (p.lastRollEvent === undefined) p.lastRollEvent = null;
-}
-
-function newId() {
-  // Node <19 doesn't always have crypto.randomUUID; keep it simple and unique enough
-  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-}
-
 function pushRollEvent(ev) {
   state.rollEvents.push(ev);
   if (state.rollEvents.length > ROLL_FEED_CAP) {
     state.rollEvents.splice(0, state.rollEvents.length - ROLL_FEED_CAP);
   }
-}
-
-function d6() {
-  return Math.floor(Math.random() * 6) + 1;
-}
-
-function clampInt(n, lo, hi) {
-  return clamp(Math.trunc(Number(n)), lo, hi);
-}
-
-function hasLiveEffect(p, effectType) {
-  const type = String(effectType ?? "");
-  if (!type) return false;
-  const list = Array.isArray(p?.activeEffects) ? p.activeEffects : [];
-  return list.some((e) => !e?.clearedAt && String(e?.type ?? "") === type);
 }
 
 function resolveNextHigherDifferentEntry(rollType, total, currentEntryId) {
