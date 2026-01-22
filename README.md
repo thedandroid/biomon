@@ -179,7 +179,9 @@ biomon/
 
 ## License
 
-MIT
+[Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+
+This project is free to use, modify, and share for non-commercial purposes. See [LICENSE](LICENSE) for details.
 
 ---
 
