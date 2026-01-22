@@ -42,29 +42,27 @@ Default port is `3050` (override with `PORT` environment variable).
 
 ---
 
-## Game Rules (Implemented)
+## How It Works
 
-### Stress Dice
+BIOMON automates stress and panic resolution for *Alien RPG* games:
 
-- **Stress Dice** (from skill checks) can show one or more **1s**
-- If **any Stress Die shows 1**, that triggers **one Stress Roll event** (not an automatic panic roll)
-- Multiple 1s still mean **one** Stress Roll for that check
+### Stress Rolls
+
+When the GM triggers a **Stress Roll**, the tool:
+1. Rolls a d6 automatically
+2. Calculates: `d6 + current_stress - resolve + modifiers`
+3. Looks up the result on the Stress Table
+4. Displays the effect and applies it to the player
 
 ### Panic Rolls
 
-- **Panic Rolls are only made when the GM explicitly calls for one**
+When the GM triggers a **Panic Roll**, the tool:
+1. Rolls a d6 automatically
+2. Calculates: `d6 + current_stress - resolve + modifiers`
+3. Looks up the result on the Panic Table
+4. Displays the effect and applies it to the player
 
-### Roll Formula
-
-Both **Stress Rolls** and **Panic Rolls** use the same formula:
-
-```
-total = d6 + current_stress - resolve + situational_modifiers
-```
-
-The difference is which table is consulted:
-- **Stress Roll** → Stress Table
-- **Panic Roll** → Panic Table
+Both roll types use the same formula but consult different tables for the outcome.
 
 ---
 
