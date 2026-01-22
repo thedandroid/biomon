@@ -5,7 +5,9 @@
     "test": "vitest run",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest --coverage",
-    "test:ui": "vitest --ui"
+    "test:ui": "vitest --ui",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "dependencies": {
     "express": "^5.2.1",
@@ -13,6 +15,7 @@
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.0.18",
+    "eslint": "^9.39.2",
     "socket.io-client": "^4.8.3",
     "vitest": "^4.0.18"
   }

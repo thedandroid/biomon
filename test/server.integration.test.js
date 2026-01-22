@@ -32,7 +32,7 @@ function resolveNextHigherDifferentEntry(rollType, total, currentEntryId) {
 }
 
 describe("Socket.io integration tests", () => {
-  let io, serverSocket, clientSocket, httpServer;
+  let io, clientSocket, httpServer;
   let state;
 
   function pushRollEvent(ev) {
@@ -62,105 +62,104 @@ describe("Socket.io integration tests", () => {
       httpServer.listen(() => {
         const port = httpServer.address().port;
 
-      // Set up Socket.io server handlers
-      io.on("connection", (socket) => {
-        serverSocket = socket;
-        for (const p of state.players) ensurePlayerFields(p);
-        socket.emit("state", state);
+        // Set up Socket.io server handlers
+        io.on("connection", (socket) => {
+          for (const p of state.players) ensurePlayerFields(p);
+          socket.emit("state", state);
 
-        socket.on("player:add", (payload) => {
-          const name = String(payload?.name ?? "").trim().slice(0, 40) || "UNNAMED";
-          const maxHealth = clamp(payload?.maxHealth ?? DEFAULT_MAX_HEALTH, 1, MAX_HEALTH_CAP);
+          socket.on("player:add", (payload) => {
+            const name = String(payload?.name ?? "").trim().slice(0, 40) || "UNNAMED";
+            const maxHealth = clamp(payload?.maxHealth ?? DEFAULT_MAX_HEALTH, 1, MAX_HEALTH_CAP);
 
-          state.players.push({
-            id: newId(),
-            name,
-            maxHealth,
-            health: clamp(payload?.health ?? maxHealth, 0, maxHealth),
-            stress: clamp(payload?.stress ?? 0, 0, MAX_STRESS),
-            resolve: clamp(payload?.resolve ?? 0, 0, MAX_RESOLVE),
-            activeEffects: [],
-            lastRollEvent: null,
+            state.players.push({
+              id: newId(),
+              name,
+              maxHealth,
+              health: clamp(payload?.health ?? maxHealth, 0, maxHealth),
+              stress: clamp(payload?.stress ?? 0, 0, MAX_STRESS),
+              resolve: clamp(payload?.resolve ?? 0, 0, MAX_RESOLVE),
+              activeEffects: [],
+              lastRollEvent: null,
+            });
+
+            broadcast();
           });
 
-          broadcast();
-        });
+          socket.on("player:remove", (payload) => {
+            const id = String(payload?.id ?? "");
+            state.players = state.players.filter((p) => p.id !== id);
+            broadcast();
+          });
 
-        socket.on("player:remove", (payload) => {
-          const id = String(payload?.id ?? "");
-          state.players = state.players.filter((p) => p.id !== id);
-          broadcast();
-        });
+          socket.on("player:update", (payload) => {
+            const id = String(payload?.id ?? "");
+            const p = state.players.find((x) => x.id === id);
+            if (!p) return;
 
-        socket.on("player:update", (payload) => {
-          const id = String(payload?.id ?? "");
-          const p = state.players.find((x) => x.id === id);
-          if (!p) return;
+            ensurePlayerFields(p);
 
-          ensurePlayerFields(p);
+            if (payload?.name !== undefined)
+              p.name = String(payload.name).trim().slice(0, 40) || p.name;
 
-          if (payload?.name !== undefined)
-            p.name = String(payload.name).trim().slice(0, 40) || p.name;
-
-          if (payload?.maxHealth !== undefined) {
-            p.maxHealth = clamp(payload.maxHealth, 1, MAX_HEALTH_CAP);
-            if (p.health > p.maxHealth) p.health = p.maxHealth;
-          }
-
-          if (payload?.health !== undefined) {
-            const maxH = clamp(p.maxHealth ?? DEFAULT_MAX_HEALTH, 1, MAX_HEALTH_CAP);
-            p.health = clamp(payload.health, 0, maxH);
-          }
-
-          if (payload?.stress !== undefined)
-            p.stress = clamp(payload.stress, 0, MAX_STRESS);
-
-          if (payload?.resolve !== undefined)
-            p.resolve = clamp(payload.resolve, 0, MAX_RESOLVE);
-
-          broadcast();
-        });
-
-        socket.on("party:clear", () => {
-          state.players = [];
-          state.rollEvents = [];
-          broadcast();
-        });
-
-        socket.on("roll:trigger", (payload) => {
-          const playerId = String(payload?.playerId ?? "");
-          const rollType = payload?.rollType === "panic" ? "panic" : "stress";
-          const modifiers = clampInt(payload?.modifiers ?? 0, -10, 10);
-
-          const p = state.players.find((x) => x.id === playerId);
-          if (!p) return;
-          ensurePlayerFields(p);
-
-          const die = d6();
-          const stress = clampInt(p.stress ?? 0, 0, MAX_STRESS);
-          const resolve = clampInt(p.resolve ?? 0, 0, MAX_RESOLVE);
-          const total = die + stress - resolve + modifiers;
-
-          let entry = resolveEntry(rollType, total);
-          let duplicateAdjusted = false;
-          let duplicateNote = null;
-          let duplicateFromId = null;
-          let duplicateFromLabel = null;
-
-          if (rollType === "panic" && entry?.persistent && hasLiveEffect(p, entry.id)) {
-            const bumped = resolveNextHigherDifferentEntry("panic", total, entry.id);
-            if (bumped) {
-              duplicateAdjusted = true;
-              duplicateFromId = String(entry.id);
-              duplicateFromLabel = String(entry.label || entry.id);
-              entry = bumped;
-              duplicateNote = `Duplicate result (${duplicateFromLabel}) already active — showing next higher response.`;
+            if (payload?.maxHealth !== undefined) {
+              p.maxHealth = clamp(payload.maxHealth, 1, MAX_HEALTH_CAP);
+              if (p.health > p.maxHealth) p.health = p.maxHealth;
             }
-          }
 
-          const stressDelta = clampInt(entry.stressDelta ?? 0, -10, 10);
-          const applyOptions = Array.isArray(entry.applyOptions)
-            ? entry.applyOptions
+            if (payload?.health !== undefined) {
+              const maxH = clamp(p.maxHealth ?? DEFAULT_MAX_HEALTH, 1, MAX_HEALTH_CAP);
+              p.health = clamp(payload.health, 0, maxH);
+            }
+
+            if (payload?.stress !== undefined)
+              p.stress = clamp(payload.stress, 0, MAX_STRESS);
+
+            if (payload?.resolve !== undefined)
+              p.resolve = clamp(payload.resolve, 0, MAX_RESOLVE);
+
+            broadcast();
+          });
+
+          socket.on("party:clear", () => {
+            state.players = [];
+            state.rollEvents = [];
+            broadcast();
+          });
+
+          socket.on("roll:trigger", (payload) => {
+            const playerId = String(payload?.playerId ?? "");
+            const rollType = payload?.rollType === "panic" ? "panic" : "stress";
+            const modifiers = clampInt(payload?.modifiers ?? 0, -10, 10);
+
+            const p = state.players.find((x) => x.id === playerId);
+            if (!p) return;
+            ensurePlayerFields(p);
+
+            const die = d6();
+            const stress = clampInt(p.stress ?? 0, 0, MAX_STRESS);
+            const resolve = clampInt(p.resolve ?? 0, 0, MAX_RESOLVE);
+            const total = die + stress - resolve + modifiers;
+
+            let entry = resolveEntry(rollType, total);
+            let duplicateAdjusted = false;
+            let duplicateNote = null;
+            let duplicateFromId = null;
+            let duplicateFromLabel = null;
+
+            if (rollType === "panic" && entry?.persistent && hasLiveEffect(p, entry.id)) {
+              const bumped = resolveNextHigherDifferentEntry("panic", total, entry.id);
+              if (bumped) {
+                duplicateAdjusted = true;
+                duplicateFromId = String(entry.id);
+                duplicateFromLabel = String(entry.label || entry.id);
+                entry = bumped;
+                duplicateNote = `Duplicate result (${duplicateFromLabel}) already active — showing next higher response.`;
+              }
+            }
+
+            const stressDelta = clampInt(entry.stressDelta ?? 0, -10, 10);
+            const applyOptions = Array.isArray(entry.applyOptions)
+              ? entry.applyOptions
                 .map((o) => {
                   const id = String(o?.id ?? "");
                   const ent = getEntryById(rollType, id);
@@ -171,185 +170,185 @@ describe("Socket.io integration tests", () => {
                   };
                 })
                 .filter(Boolean)
-            : null;
-          const timestamp = Date.now();
-          const eventId = newId();
+              : null;
+            const timestamp = Date.now();
+            const eventId = newId();
 
-          const rollEvent = {
-            eventId,
-            playerId,
-            rollType,
-            die,
-            stress,
-            resolve,
-            modifiers,
-            total,
-            tableEntryId: entry.id,
-            label: entry.label,
-            description: entry.description,
-            stressDelta,
-            duplicateAdjusted,
-            duplicateFromId,
-            duplicateFromLabel,
-            timestamp,
-          };
-
-          p.lastRollEvent = {
-            type: rollType,
-            eventId,
-            total,
-            die,
-            stress,
-            resolve,
-            modifiers,
-            tableEntryId: entry.id,
-            tableEntryLabel: entry.label,
-            tableEntryDescription: entry.description,
-            tableEntryStressDelta: stressDelta,
-            duplicateAdjusted,
-            duplicateFromId,
-            duplicateFromLabel,
-            duplicateNote,
-            applyOptions,
-            appliedTableEntryId: null,
-            appliedTableEntryLabel: null,
-            appliedTableEntryDescription: null,
-            appliedTableEntryStressDelta: null,
-            timestamp,
-            applied: false,
-            appliedEffectId: null,
-          };
-
-          pushRollEvent(rollEvent);
-          broadcast();
-        });
-
-        socket.on("roll:apply", (payload) => {
-          const playerId = String(payload?.playerId ?? "");
-          const eventId = String(payload?.eventId ?? "");
-          const chosenTableEntryId = payload?.tableEntryId !== undefined ? String(payload.tableEntryId) : null;
-
-          const p = state.players.find((x) => x.id === playerId);
-          if (!p) return;
-          ensurePlayerFields(p);
-
-          const lr = p.lastRollEvent;
-          if (!lr || String(lr.eventId ?? "") !== eventId) return;
-          if (lr.applied) return;
-
-          const rollType = lr.type === "panic" ? "panic" : "stress";
-          const baseEntry = getEntryById(rollType, lr.tableEntryId) || resolveEntry(rollType, lr.total);
-
-          let entry = baseEntry;
-          if (chosenTableEntryId) {
-            const allowed = Array.isArray(baseEntry.applyOptions)
-              ? baseEntry.applyOptions.some((o) => String(o?.id ?? "") === chosenTableEntryId)
-              : false;
-            if (allowed) {
-              const picked = getEntryById(rollType, chosenTableEntryId);
-              if (picked) entry = picked;
-            }
-          }
-
-          lr.applied = true;
-          lr.appliedTableEntryId = entry.id;
-          lr.appliedTableEntryLabel = entry.label;
-          lr.appliedTableEntryDescription = entry.description;
-          lr.appliedTableEntryStressDelta = clampInt(entry.stressDelta ?? 0, -10, 10);
-
-          if (rollType === "stress" && entry.persistent && hasLiveEffect(p, entry.id)) {
-            p.stress = clampInt(clampInt(p.stress ?? 0, 0, MAX_STRESS) + 1, 0, MAX_STRESS);
-            lr.appliedEffectId = null;
-            broadcast();
-            return;
-          }
-
-          if (entry.persistent) {
-            const effect = {
-              id: newId(),
-              type: entry.id,
+            const rollEvent = {
+              eventId,
+              playerId,
+              rollType,
+              die,
+              stress,
+              resolve,
+              modifiers,
+              total,
+              tableEntryId: entry.id,
               label: entry.label,
-              severity: clampInt(entry.severity ?? (rollType === "panic" ? 4 : 2), 1, 5),
-              createdAt: Date.now(),
-              durationType: String(entry.durationType ?? "manual"),
-              durationValue: entry.durationValue,
-              clearedAt: null,
+              description: entry.description,
+              stressDelta,
+              duplicateAdjusted,
+              duplicateFromId,
+              duplicateFromLabel,
+              timestamp,
             };
 
-            p.activeEffects.push(effect);
-            lr.appliedEffectId = effect.id;
-          } else {
+            p.lastRollEvent = {
+              type: rollType,
+              eventId,
+              total,
+              die,
+              stress,
+              resolve,
+              modifiers,
+              tableEntryId: entry.id,
+              tableEntryLabel: entry.label,
+              tableEntryDescription: entry.description,
+              tableEntryStressDelta: stressDelta,
+              duplicateAdjusted,
+              duplicateFromId,
+              duplicateFromLabel,
+              duplicateNote,
+              applyOptions,
+              appliedTableEntryId: null,
+              appliedTableEntryLabel: null,
+              appliedTableEntryDescription: null,
+              appliedTableEntryStressDelta: null,
+              timestamp,
+              applied: false,
+              appliedEffectId: null,
+            };
+
+            pushRollEvent(rollEvent);
+            broadcast();
+          });
+
+          socket.on("roll:apply", (payload) => {
+            const playerId = String(payload?.playerId ?? "");
+            const eventId = String(payload?.eventId ?? "");
+            const chosenTableEntryId = payload?.tableEntryId !== undefined ? String(payload.tableEntryId) : null;
+
+            const p = state.players.find((x) => x.id === playerId);
+            if (!p) return;
+            ensurePlayerFields(p);
+
+            const lr = p.lastRollEvent;
+            if (!lr || String(lr.eventId ?? "") !== eventId) return;
+            if (lr.applied) return;
+
+            const rollType = lr.type === "panic" ? "panic" : "stress";
+            const baseEntry = getEntryById(rollType, lr.tableEntryId) || resolveEntry(rollType, lr.total);
+
+            let entry = baseEntry;
+            if (chosenTableEntryId) {
+              const allowed = Array.isArray(baseEntry.applyOptions)
+                ? baseEntry.applyOptions.some((o) => String(o?.id ?? "") === chosenTableEntryId)
+                : false;
+              if (allowed) {
+                const picked = getEntryById(rollType, chosenTableEntryId);
+                if (picked) entry = picked;
+              }
+            }
+
+            lr.applied = true;
+            lr.appliedTableEntryId = entry.id;
+            lr.appliedTableEntryLabel = entry.label;
+            lr.appliedTableEntryDescription = entry.description;
+            lr.appliedTableEntryStressDelta = clampInt(entry.stressDelta ?? 0, -10, 10);
+
+            if (rollType === "stress" && entry.persistent && hasLiveEffect(p, entry.id)) {
+              p.stress = clampInt(clampInt(p.stress ?? 0, 0, MAX_STRESS) + 1, 0, MAX_STRESS);
+              lr.appliedEffectId = null;
+              broadcast();
+              return;
+            }
+
+            if (entry.persistent) {
+              const effect = {
+                id: newId(),
+                type: entry.id,
+                label: entry.label,
+                severity: clampInt(entry.severity ?? (rollType === "panic" ? 4 : 2), 1, 5),
+                createdAt: Date.now(),
+                durationType: String(entry.durationType ?? "manual"),
+                durationValue: entry.durationValue,
+                clearedAt: null,
+              };
+
+              p.activeEffects.push(effect);
+              lr.appliedEffectId = effect.id;
+            } else {
+              lr.appliedEffectId = null;
+            }
+
+            broadcast();
+          });
+
+          socket.on("roll:undo", (payload) => {
+            const playerId = String(payload?.playerId ?? "");
+            const eventId = String(payload?.eventId ?? "");
+
+            const p = state.players.find((x) => x.id === playerId);
+            if (!p) return;
+            ensurePlayerFields(p);
+
+            const lr = p.lastRollEvent;
+            if (!lr || String(lr.eventId ?? "") !== eventId) return;
+            if (!lr.applied) return;
+
+            if (lr.appliedEffectId) {
+              const eff = p.activeEffects.find((e) => e.id === lr.appliedEffectId);
+              if (eff && !eff.clearedAt) eff.clearedAt = Date.now();
+            }
+
+            lr.applied = false;
             lr.appliedEffectId = null;
-          }
+            lr.appliedTableEntryId = null;
+            lr.appliedTableEntryLabel = null;
+            lr.appliedTableEntryDescription = null;
+            lr.appliedTableEntryStressDelta = null;
 
-          broadcast();
+            broadcast();
+          });
+
+          socket.on("effect:clear", (payload) => {
+            const playerId = String(payload?.playerId ?? "");
+            const effectId = String(payload?.effectId ?? "");
+
+            const p = state.players.find((x) => x.id === playerId);
+            if (!p) return;
+            ensurePlayerFields(p);
+
+            const eff = p.activeEffects.find((e) => e.id === effectId);
+            if (!eff) return;
+            if (!eff.clearedAt) eff.clearedAt = Date.now();
+
+            if (p.lastRollEvent && p.lastRollEvent.appliedEffectId === effectId) {
+              p.lastRollEvent.applied = false;
+              p.lastRollEvent.appliedEffectId = null;
+              p.lastRollEvent.appliedTableEntryId = null;
+              p.lastRollEvent.appliedTableEntryLabel = null;
+              p.lastRollEvent.appliedTableEntryDescription = null;
+              p.lastRollEvent.appliedTableEntryStressDelta = null;
+            }
+
+            broadcast();
+          });
         });
 
-        socket.on("roll:undo", (payload) => {
-          const playerId = String(payload?.playerId ?? "");
-          const eventId = String(payload?.eventId ?? "");
-
-          const p = state.players.find((x) => x.id === playerId);
-          if (!p) return;
-          ensurePlayerFields(p);
-
-          const lr = p.lastRollEvent;
-          if (!lr || String(lr.eventId ?? "") !== eventId) return;
-          if (!lr.applied) return;
-
-          if (lr.appliedEffectId) {
-            const eff = p.activeEffects.find((e) => e.id === lr.appliedEffectId);
-            if (eff && !eff.clearedAt) eff.clearedAt = Date.now();
-          }
-
-          lr.applied = false;
-          lr.appliedEffectId = null;
-          lr.appliedTableEntryId = null;
-          lr.appliedTableEntryLabel = null;
-          lr.appliedTableEntryDescription = null;
-          lr.appliedTableEntryStressDelta = null;
-
-          broadcast();
-        });
-
-        socket.on("effect:clear", (payload) => {
-          const playerId = String(payload?.playerId ?? "");
-          const effectId = String(payload?.effectId ?? "");
-
-          const p = state.players.find((x) => x.id === playerId);
-          if (!p) return;
-          ensurePlayerFields(p);
-
-          const eff = p.activeEffects.find((e) => e.id === effectId);
-          if (!eff) return;
-          if (!eff.clearedAt) eff.clearedAt = Date.now();
-
-          if (p.lastRollEvent && p.lastRollEvent.appliedEffectId === effectId) {
-            p.lastRollEvent.applied = false;
-            p.lastRollEvent.appliedEffectId = null;
-            p.lastRollEvent.appliedTableEntryId = null;
-            p.lastRollEvent.appliedTableEntryLabel = null;
-            p.lastRollEvent.appliedTableEntryDescription = null;
-            p.lastRollEvent.appliedTableEntryStressDelta = null;
-          }
-
-          broadcast();
-        });
-      });
-
-      // Connect client socket
-      clientSocket = ioClient(`http://localhost:${port}`);
+        // Connect client socket
+        clientSocket = ioClient(`http://localhost:${port}`);
       
-      clientSocket.on("connect", () => {
-        clearTimeout(timeout);
-        resolve();
-      });
+        clientSocket.on("connect", () => {
+          clearTimeout(timeout);
+          resolve();
+        });
       
-      clientSocket.on("connect_error", (err) => {
-        clearTimeout(timeout);
-        reject(err);
+        clientSocket.on("connect_error", (err) => {
+          clearTimeout(timeout);
+          reject(err);
+        });
       });
-    });
     });
   });
 
@@ -502,7 +501,7 @@ describe("Socket.io integration tests", () => {
           resolve: 0,
           activeEffects: [],
           lastRollEvent: null,
-        }
+        },
       );
 
       clientSocket.emit("player:remove", { id: "player-1" });

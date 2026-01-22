@@ -1,4 +1,4 @@
-/* eslint-disable no-console */
+ 
 
 const { resolveEntry, STRESS_TABLE, PANIC_TABLE } = require("../responseTables");
 

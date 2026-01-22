@@ -180,16 +180,16 @@ io.on("connection", (socket) => {
     const stressDelta = clampInt(entry.stressDelta ?? 0, -10, 10);
     const applyOptions = Array.isArray(entry.applyOptions)
       ? entry.applyOptions
-          .map((o) => {
-            const id = String(o?.id ?? "");
-            const ent = getEntryById(rollType, id);
-            if (!ent) return null;
-            return {
-              tableEntryId: ent.id,
-              label: String(o?.label ?? ent.label),
-            };
-          })
-          .filter(Boolean)
+        .map((o) => {
+          const id = String(o?.id ?? "");
+          const ent = getEntryById(rollType, id);
+          if (!ent) return null;
+          return {
+            tableEntryId: ent.id,
+            label: String(o?.label ?? ent.label),
+          };
+        })
+        .filter(Boolean)
       : null;
     const timestamp = Date.now();
     const eventId = newId();
@@ -269,8 +269,8 @@ io.on("connection", (socket) => {
     if (chosenTableEntryId) {
       const allowed = Array.isArray(baseEntry.applyOptions)
         ? baseEntry.applyOptions.some(
-            (o) => String(o?.id ?? "") === chosenTableEntryId,
-          )
+          (o) => String(o?.id ?? "") === chosenTableEntryId,
+        )
         : false;
       if (allowed) {
         const picked = getEntryById(rollType, chosenTableEntryId);

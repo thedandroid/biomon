@@ -22,10 +22,6 @@ const ecgEngine = (() => {
     return Date.now();
   }
 
-  function clamp01(x) {
-    return Math.max(0, Math.min(1, x));
-  }
-
   function upsert(id, canvas, params) {
     let it = items.get(id);
     if (!it || it.canvas !== canvas) {
@@ -60,7 +56,6 @@ const ecgEngine = (() => {
 
   // Generate one ECG-like sample (baseline + QRS spike + small jitter)
   function sample(it) {
-    const W = it.canvas.width;
     const { health, maxHealth, stress } = it.params;
 
     const maxH = maxHealth || 5;
@@ -263,23 +258,23 @@ function computeRollFlash(p) {
 
 function dotClassForHealth(statusLabel) {
   switch (String(statusLabel)) {
-    case "CRITICAL":
-      return "dot-bad";
-    case "COMPROMISED":
-      return "dot-warn";
-    default:
-      return "dot-ok";
+  case "CRITICAL":
+    return "dot-bad";
+  case "COMPROMISED":
+    return "dot-warn";
+  default:
+    return "dot-ok";
   }
 }
 
 function dotClassForStress(statusLabel) {
   switch (String(statusLabel)) {
-    case "PANIC":
-      return "dot-panic";
-    case "HIGH":
-      return "dot-warn";
-    default:
-      return "dot-ok";
+  case "PANIC":
+    return "dot-panic";
+  case "HIGH":
+    return "dot-warn";
+  default:
+    return "dot-ok";
   }
 }
 

@@ -42,7 +42,14 @@ npm run selfcheck        # Legacy table validation script
 - See `test/README.md` for detailed testing guide
 
 ### Linting/Formatting
-**Note**: There are NO configured linters or formatters (no ESLint config, Prettier, etc.) at the project level. Code review is manual.
+```bash
+npm run lint          # Check for lint errors
+npm run lint:fix      # Auto-fix lint errors
+```
+**Linter**: ESLint v9 with flat config format (eslint.config.js)
+- **Rules**: Enforces project style (2-space indent, double quotes, semicolons, trailing commas)
+- **Auto-fix**: Most formatting issues can be auto-fixed with `npm run lint:fix`
+- **Browser globals**: Configured for frontend files in `public/`
 
 ## Project Structure
 
@@ -53,6 +60,7 @@ party-visualizer-roller/
 ├── utils.js               # Shared utility functions (clamp, newId, etc.)
 ├── package.json           # Dependencies (express, socket.io, vitest)
 ├── vitest.config.js       # Test configuration
+├── eslint.config.js       # ESLint v9 flat config
 ├── public/                # Static frontend files
 │   ├── player.html       # Player view interface
 │   ├── player.js         # Player-side logic with ECG animation
