@@ -1,10 +1,16 @@
 {
   "scripts": {
     "start": "node server.js",
-    "selfcheck": "node scripts/selfcheck.js"
+    "selfcheck": "node scripts/selfcheck.js",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest --coverage"
   },
   "dependencies": {
     "express": "^5.2.1",
     "socket.io": "^4.8.3"
+  },
+  "devDependencies": {
+    "vitest": "^4.0.18"
   }
 }
