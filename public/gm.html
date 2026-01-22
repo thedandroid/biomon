@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GM Console — Party Vitals</title>
+    <link rel="stylesheet" href="/styles.css?v=2" />
+  </head>
+  <body class="bg">
+    <div class="shell shell-gm">
+      <header class="topbar">
+        <div>
+          <div class="kicker">WEYLAND-YUTANI MEDICAL SYSTEMS</div>
+          <h1 class="title">GM CONSOLE</h1>
+        </div>
+        <div class="top-actions">
+          <button
+            id="openAdd"
+            class="btn btn-primary"
+            title="Add a crew member"
+          >
+            ADD CREW
+          </button>
+          <button
+            id="clearParty"
+            class="btn btn-ghost"
+            title="Remove all players"
+          >
+            CLEAR PARTY
+          </button>
+        </div>
+      </header>
+
+      <main>
+        <section class="panel panel-gm-roster">
+          <div class="panel-hd">
+            <h2 class="panel-title">CREW ROSTER</h2>
+            <div class="panel-sub">Per-crew vitals + roller controls.</div>
+          </div>
+          <div id="gmList" class="gm-list"></div>
+        </section>
+      </main>
+
+      <!-- Add Crew Modal -->
+      <div id="addModal" class="modal" aria-hidden="true">
+        <div class="modal-backdrop" data-close="1"></div>
+        <div
+          class="modal-dialog"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Add Crew Member"
+        >
+          <div class="modal-hd">
+            <div>
+              <div class="kicker">WEYLAND-YUTANI MEDICAL SYSTEMS</div>
+              <h2 class="panel-title" style="margin: 6px 0 0">
+                ADD CREW MEMBER
+              </h2>
+            </div>
+            <button id="closeAdd" class="btn btn-ghost" title="Close">
+              CLOSE
+            </button>
+          </div>
+
+          <form id="addForm" class="form" style="margin-top: 14px">
+            <label class="lbl">NAME</label>
+            <input
+              id="name"
+              class="inp"
+              placeholder="e.g., RIPLEY"
+              maxlength="40"
+            />
+
+            <div class="row">
+              <div class="col">
+                <label class="lbl">MAX HEALTH</label>
+                <input
+                  id="maxHealth"
+                  class="inp"
+                  type="number"
+                  min="1"
+                  max="10"
+                  step="1"
+                  value="5"
+                />
+                <div class="hint">
+                  Upper bound for this character’s health meter.
+                </div>
+              </div>
+              <div class="col">
+                <label class="lbl">HEALTH</label>
+                <input
+                  id="health"
+                  class="inp"
+                  type="number"
+                  min="0"
+                  max="10"
+                  step="1"
+                  value="5"
+                />
+                <div class="hint">0–10. Physical condition / wounds.</div>
+              </div>
+              <div class="col">
+                <label class="lbl">STRESS</label>
+                <input
+                  id="stress"
+                  class="inp"
+                  type="number"
+                  min="0"
+                  max="10"
+                  step="1"
+                  value="0"
+                />
+                <div class="hint">0–10. Panic pressure / mental load.</div>
+              </div>
+              <div class="col">
+                <label class="lbl">RESOLVE</label>
+                <input
+                  id="resolve"
+                  class="inp"
+                  type="number"
+                  min="0"
+                  max="10"
+                  step="1"
+                  value="0"
+                />
+                <div class="hint">
+                  0–10. Mental fortitude against stress/panic rolls.
+                </div>
+              </div>
+            </div>
+
+            <div
+              style="
+                display: flex;
+                gap: 10px;
+                justify-content: flex-end;
+                align-items: center;
+                margin-top: 6px;
+              "
+            >
+              <button class="btn btn-primary" type="submit">ADD</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/gm.js"></script>
+  </body>
+</html>

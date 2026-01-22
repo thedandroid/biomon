@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Party Vitals Dashboard</title>
+    <link rel="stylesheet" href="/styles.css?v=2" />
+  </head>
+  <body class="bg">
+    <div class="shell">
+      <header class="topbar">
+        <div>
+          <div class="kicker">WEYLAND-YUTANI MEDICAL SYSTEMS</div>
+          <h1 class="title">CREW VITALS</h1>
+        </div>
+        <div class="right">
+          <div class="badge">
+            <div class="badge-k">LINK</div>
+            <div id="linkStatus" class="badge-v">CONNECTING</div>
+          </div>
+          <div class="badge">
+            <div class="badge-k">CREW</div>
+            <div id="crewCount" class="badge-v">0</div>
+          </div>
+          <div class="badge">
+            <div class="badge-k">PARTY STRESS</div>
+            <div id="partyStress" class="badge-v">0.0</div>
+          </div>
+        </div>
+      </header>
+
+      <main>
+        <section class="panel">
+          <div class="panel-hd">
+            <h2 class="panel-title">MEDICAL OVERVIEW</h2>
+          </div>
+
+          <div id="cards" class="cards"></div>
+
+          <div class="legend">
+            <div class="legend-col">
+              <div class="legend-item"><span class="mono">HEALTH</span></div>
+              <div class="legend-item">
+                <span class="dot dot-ok"></span> Stable
+              </div>
+              <div class="legend-item">
+                <span class="dot dot-warn"></span> Compromised
+              </div>
+              <div class="legend-item">
+                <span class="dot dot-bad"></span> Critical
+              </div>
+            </div>
+
+            <div class="legend-col legend-col-right">
+              <div class="legend-item"><span class="mono">STRESS</span></div>
+              <div class="legend-item"><span class="dot dot-ok"></span> OK</div>
+              <div class="legend-item">
+                <span class="dot dot-warn"></span> High
+              </div>
+              <div class="legend-item">
+                <span class="dot dot-panic"></span> Panicked
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/player.js"></script>
+  </body>
+</html>

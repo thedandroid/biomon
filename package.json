@@ -1,0 +1,10 @@
+{
+  "scripts": {
+    "start": "node server.js",
+    "selfcheck": "node scripts/selfcheck.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "socket.io": "^4.8.3"
+  }
+}
