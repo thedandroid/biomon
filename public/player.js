@@ -171,7 +171,6 @@ const ecgEngine = (() => {
     const mid = Math.floor(H * 0.55);
     const scale = H * 0.32;
 
-    // Simple scrolling approach: only draw up to current position
     // Clear the entire canvas first
     ctx.clearRect(0, 0, W, H);
     
@@ -192,22 +191,85 @@ const ecgEngine = (() => {
     }
     ctx.stroke();
 
-    // Simple single-pass rendering
+    // Phosphor glow rendering with trailing fade and vertical gradient
     const baseColor = it.params.ecgColor || "rgba(108,255,184,1)";
     
-    ctx.strokeStyle = baseColor;
-    ctx.lineWidth = 2;
-    ctx.shadowBlur = 0;
-    ctx.globalAlpha = 1;
+    // Extract RGB from rgba string for glow
+    const rgbMatch = baseColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+    const r = rgbMatch ? rgbMatch[1] : "108";
+    const g = rgbMatch ? rgbMatch[2] : "255";
+    const b = rgbMatch ? rgbMatch[3] : "184";
 
-    // Draw the waveform in chronological order (oldest to newest)
+    // Pass 1: Outer glow (widest, faintest)
+    ctx.shadowBlur = 20;
+    ctx.shadowColor = `rgba(${r},${g},${b},0.9)`;
+    ctx.strokeStyle = `rgba(${r},${g},${b},0.3)`;
+    ctx.lineWidth = 6;
+
     ctx.beginPath();
-    for (let i = 0; i < W; i++) {
-      const idx = (it.x + i) % W;
+    for (let x = 0; x < W; x++) {
+      const idx = (it.x + x) % W;
       const yy = mid - it.buf[idx] * scale;
       
-      if (i === 0) ctx.moveTo(i, yy);
-      else ctx.lineTo(i, yy);
+      // Trailing fade: older samples fade out
+      const distFromHead = (W + idx - it.x) % W;
+      const fadeFactor = 1 - (distFromHead / W) * 0.5; // Fade from 1.0 to 0.5
+      
+      ctx.globalAlpha = 0.7 * fadeFactor;
+      
+      if (x === 0) ctx.moveTo(x, yy);
+      else ctx.lineTo(x, yy);
+    }
+    ctx.stroke();
+
+    // Pass 2: Inner glow (tighter, brighter)
+    ctx.shadowBlur = 8;
+    ctx.shadowColor = `rgba(${r},${g},${b},1)`;
+    ctx.strokeStyle = `rgba(${r},${g},${b},0.8)`;
+    ctx.lineWidth = 3;
+
+    ctx.beginPath();
+    for (let x = 0; x < W; x++) {
+      const idx = (it.x + x) % W;
+      const yy = mid - it.buf[idx] * scale;
+      
+      const distFromHead = (W + idx - it.x) % W;
+      const fadeFactor = 1 - (distFromHead / W) * 0.5;
+      
+      ctx.globalAlpha = 0.9 * fadeFactor;
+      
+      if (x === 0) ctx.moveTo(x, yy);
+      else ctx.lineTo(x, yy);
+    }
+    ctx.stroke();
+
+    // Pass 3: Sharp main trace with vertical brightness gradient
+    ctx.shadowBlur = 0;
+    ctx.shadowColor = "transparent";
+    
+    // Create vertical gradient for the trace (brighter at peaks, dimmer at troughs)
+    const gradient = ctx.createLinearGradient(0, 0, 0, H);
+    gradient.addColorStop(0, `rgba(${r},${g},${b},0.6)`);    // Top - dimmer
+    gradient.addColorStop(0.4, `rgba(${r},${g},${b},1.0)`);  // Upper-mid - bright
+    gradient.addColorStop(0.6, `rgba(${r},${g},${b},1.0)`);  // Lower-mid - bright
+    gradient.addColorStop(1, `rgba(${r},${g},${b},0.6)`);    // Bottom - dimmer
+    
+    ctx.strokeStyle = gradient;
+    ctx.lineWidth = 2;
+
+    ctx.beginPath();
+    for (let x = 0; x < W; x++) {
+      const idx = (it.x + x) % W;
+      const yy = mid - it.buf[idx] * scale;
+      
+      // Same trailing fade for consistency
+      const distFromHead = (W + idx - it.x) % W;
+      const fadeFactor = 1 - (distFromHead / W) * 0.5;
+      
+      ctx.globalAlpha = 1.0 * fadeFactor;
+      
+      if (x === 0) ctx.moveTo(x, yy);
+      else ctx.lineTo(x, yy);
     }
     ctx.stroke();
 
