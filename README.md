@@ -352,10 +352,6 @@ npm run lint:fix
 
 Yes! Just forward port 3050 or deploy to a server. Players connect via your server's URL.
 
-### Does it work with other RPG systems?
-
-The core concept works for any game with stress/panic mechanics. You'd need to customize the tables in `responseTables.js` to match your system's rules.
-
 ### What happens if the server restarts?
 
 No problem! BIOMON automatically saves your state and restores it on startup. Your session will be recovered with all players, stats, and roll history intact.
