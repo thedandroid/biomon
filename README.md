@@ -16,6 +16,7 @@ A lightweight, diegetic party status tracker with an integrated **Stress & Panic
 - [Features](#features)
 - [Quick Start](#quick-start)
 - [How It Works](#how-it-works)
+- [Session Persistence](#session-persistence)
 - [GM View — How to Use](#gm-view--how-to-use)
 - [Player View — What Players See](#player-view--what-players-see)
 - [Customization](#customization)
@@ -53,10 +54,12 @@ What players see - their crew's vitals with real-time ECG animations and effect 
 
 - **Real-time crew monitoring** - Track health, stress, and resolve for all players
 - **Integrated dice roller** - Automated Stress and Panic rolls with table lookup
+- **Auto-save & persistence** - Automatic state saving with campaign management
 - **Diegetic UI** - Medical terminal aesthetic with ECG waveforms
 - **GM & Player views** - Separate interfaces for game master and players
 - **Effect tracking** - Persistent panic/stress effects with visual indicators
-- **No database required** - In-memory state, zero setup complexity
+- **Session management** - Save/load campaigns, export/import backups
+- **No database required** - File-based persistence, zero setup complexity
 
 ---
 
@@ -106,6 +109,38 @@ When the GM triggers a **Panic Roll**, the tool:
 4. Displays the effect and applies it to the player
 
 Both roll types use the same formula but consult different tables for the outcome.
+
+---
+
+## Session Persistence
+
+BIOMON automatically saves your game state and supports campaign management.
+
+### Auto-Save
+
+- **Automatic backup** - State saved to `sessions/autosave.json` after every change
+- **Crash protection** - Server restart automatically recovers your session
+- **Debounced writes** - Saves at most once per second to avoid excessive disk I/O
+- **Recovery notification** - GM receives alert when previous session is restored
+
+### Campaign Management
+
+Access via the **SESSION** button in the GM view:
+
+- **Save Campaign** - Name and save your campaign with metadata
+  - Tracks campaign name, save date, player count, session number
+  - Files saved as `sessions/campaign-{name}.json`
+- **Load Campaign** - Browse and restore previously saved campaigns
+- **New Session** - Clear current state and start fresh
+- **Export Backup** - Download session as JSON to your computer
+- **Import Backup** - Restore from a previously exported file
+
+### Use Cases
+
+- **One-shots** - Auto-save protects against mid-session crashes
+- **Campaigns** - Save at end of each session, load to continue
+- **Multiple games** - Manage separate campaigns with unique names
+- **Backup strategy** - Export important campaigns to external storage
 
 ---
 
@@ -196,9 +231,10 @@ npm run test:ui          # Interactive UI
 
 - **Backend**: Node.js, Express v5, Socket.io v4
 - **Frontend**: Vanilla JavaScript (no frameworks), HTML5, CSS3
+- **Persistence**: File-based JSON storage (auto-save + campaigns)
 - **No TypeScript**: Pure JavaScript implementation
 - **No Build Tools**: Static file serving
-- **State**: In-memory (no database)
+- **No Database**: Simple JSON files for state
 
 ---
 
@@ -209,6 +245,9 @@ biomon/
 ├── server.js              # Express/Socket.io server
 ├── responseTables.js      # Stress & Panic table definitions
 ├── utils.js               # Shared utility functions
+├── sessions/              # Saved game state (gitignored)
+│   ├── autosave.json     # Auto-saved state
+│   └── campaign-*.json   # Named campaign saves
 ├── public/                # Static frontend files
 │   ├── gm.html           # GM view
 │   ├── gm.js             # GM logic
@@ -265,7 +304,15 @@ The core concept works for any game with stress/panic mechanics. You'd need to c
 
 ### What happens if the server restarts?
 
-State is stored in-memory, so it resets. Consider exporting state periodically if running long sessions.
+No problem! BIOMON automatically saves your state and restores it on startup. Your session will be recovered with all players, stats, and roll history intact.
+
+### How do I backup my campaigns?
+
+Multiple options:
+- **Auto-save**: Runs automatically, saved to `sessions/autosave.json`
+- **Named campaigns**: Click SESSION → Save Campaign (stored in `sessions/` directory)
+- **Export backup**: Download JSON file to your computer for external backup
+- **File system**: Copy the entire `sessions/` directory
 
 ### Can I customize the look?
 
