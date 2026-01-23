@@ -82,7 +82,7 @@ const ecgEngine = (() => {
     const hp = Math.max(0, Math.min(maxH, health));
     const hpPct = maxH ? hp / maxH : 1;
 
-    // If health is 0, the monitor should flatline.
+    // If health is 0, flatline with minimal electrical noise
     if (hp <= 0) {
       it.t += 1 / 60;
       const tinyDrift = Math.sin((it.t * 0.1 + it.phase) * Math.PI * 2) * 0.002;
@@ -90,13 +90,24 @@ const ecgEngine = (() => {
       return tinyDrift + tinyNoise;
     }
 
-    // Heart rate: higher stress -> faster; lower health -> slightly faster (panic / trauma)
-    const bpm = 55 + (stress / 10) * 85 + (1 - hpPct) * 35; // 55..175-ish
+    // Heart rate varies with stress and health
+    // Baseline: 60 BPM
+    // Stress: +5 BPM per stress point (max +50 at stress 10)
+    // Low health: +20 BPM when critically injured (compensatory tachycardia)
+    const baseBPM = 60;
+    const stressBPM = stress * 5;
+    const injuryBPM = hpPct < 0.3 ? (1 - hpPct) * 20 : 0;
+    const bpm = baseBPM + stressBPM + injuryBPM; // Range: 60-130 BPM
     const hz = bpm / 60;
 
-    // Amplitude: lower health -> weaker signal; higher stress -> noisier
-    const amp = 0.75 * (0.45 + 0.55 * hpPct);
-    const noise = 0.05 + (stress / 10) * 0.18;
+    // Amplitude effects
+    // Lower health -> weaker R wave (poor cardiac output)
+    // Very low health -> more irregular beats (arrhythmia simulation)
+    const baseAmp = 0.7 * (0.3 + 0.7 * hpPct); // Decreases with injury
+    
+    // High stress -> slightly increased amplitude (adrenaline)
+    const stressAmpBoost = stress > 6 ? 1.1 : 1.0;
+    const amp = baseAmp * stressAmpBoost;
 
     // Roll event overlay (stress: mild disturbance, panic: strong spike)
     const ev = it.params.event;
@@ -109,57 +120,104 @@ const ecgEngine = (() => {
     // Time progression (normalized)
     it.t += 1 / 60;
     let p = (it.t * hz + it.phase) % 1; // 0..1
-    if (p < 0) p += 1; // Handle negative modulo for negative t values
+    if (p < 0) p += 1; // Handle negative modulo
 
-    // Smoother ECG shape using sine waves instead of sharp transitions
+    // ECG waveform generation
     let y = 0;
     
-    // P wave (small bump)
+    // P wave (atrial depolarization)
+    // Smaller with high stress (anxiety flattens P wave)
+    const pWaveAmp = 0.18 * (1 - stress * 0.03);
     if (p > 0.08 && p < 0.16) {
       const u = (p - 0.08) / 0.08;
-      y += 0.18 * Math.sin(u * Math.PI);
+      y += pWaveAmp * Math.sin(u * Math.PI);
     }
     
-    // QRS complex - SMOOTHED with sine waves instead of sharp steps
+    // QRS complex (ventricular depolarization)
     if (p > 0.20 && p < 0.28) {
       const u = (p - 0.20) / 0.08;
-      // Smooth approximation of QRS: small dip, tall spike, small dip
+      
+      // Q wave (small dip)
       if (u < 0.25) {
-        // Q wave (small dip)
         y += -0.2 * Math.sin(u * 4 * Math.PI);
-      } else if (u < 0.75) {
-        // R wave (tall spike)
+      } 
+      // R wave (tall spike) - main feature
+      else if (u < 0.75) {
         const ru = (u - 0.25) / 0.5;
         y += 0.9 * Math.sin(ru * Math.PI);
-      } else {
-        // S wave (small dip)
+      } 
+      // S wave (small dip)
+      else {
         const su = (u - 0.75) / 0.25;
         y += -0.15 * Math.sin(su * Math.PI);
       }
     }
     
-    // T wave (medium bump)
-    if (p > 0.34 && p < 0.5) {
-      const u = (p - 0.34) / 0.16;
-      y += 0.3 * Math.sin(u * Math.PI);
+    // T wave (ventricular repolarization)
+    // Taller and wider with high stress (stress-induced T wave changes)
+    const tWaveAmp = 0.3 * (1 + stress * 0.04);
+    const tWaveWidth = stress > 7 ? 0.18 : 0.16; // Wider when very stressed
+    const tWaveStart = 0.34;
+    const tWaveEnd = tWaveStart + tWaveWidth;
+    if (p > tWaveStart && p < tWaveEnd) {
+      const u = (p - tWaveStart) / tWaveWidth;
+      y += tWaveAmp * Math.sin(u * Math.PI);
     }
 
-    // Baseline drift (very gentle)
-    const drift = Math.sin((it.t * 0.35 + it.phase) * Math.PI * 2) * 0.06;
+    // ST segment changes (between S and T wave)
+    // Depression with low health (ischemia simulation)
+    // Elevation with very high stress (acute stress response)
+    let stChange = 0;
+    if (p > 0.28 && p < 0.34) {
+      if (hpPct < 0.4) {
+        // ST depression (heart struggling)
+        stChange = -0.08 * (1 - hpPct);
+      } else if (stress >= 9) {
+        // ST elevation (extreme stress)
+        stChange = 0.06 * ((stress - 8) / 2);
+      }
+    }
+    y += stChange;
+
+    // Baseline drift (respiration artifact)
+    // More pronounced with stress (heavy breathing)
+    const driftFreq = 0.15 + (stress / 10) * 0.1; // Faster breathing when stressed
+    const driftAmp = 0.05 + (stress / 10) * 0.03;
+    const drift = Math.sin((it.t * driftFreq + it.phase) * Math.PI * 2) * driftAmp;
     
-    // Only add jitter if stressed or event active
-    const jitter = (stress > 0 || evActive)
-      ? (Math.random() - 0.5) * (noise + evIntensity * (evPanic ? 0.3 : 0.12))
+    // Baseline wander with low health (poor lead contact / patient movement)
+    const healthWander = hpPct < 0.5 
+      ? Math.sin((it.t * 0.08 + it.phase * 2) * Math.PI * 2) * 0.04 * (1 - hpPct)
+      : 0;
+    
+    // High-frequency noise (muscle tremor, electrical interference)
+    // Increases with stress (muscle tension) and low health (shivering, weakness)
+    const noiseLevel = 0.008 + (stress / 10) * 0.015 + (1 - hpPct) * 0.01;
+    const jitter = (stress > 0 || hpPct < 0.8 || evActive)
+      ? (Math.random() - 0.5) * (noiseLevel + evIntensity * (evPanic ? 0.04 : 0.02))
       : 0;
 
-    // Additional event spikes for panic (only if event active)
-    let spike = 0;
-    if (evActive) {
-      const chance = evPanic ? 0.09 : 0.04;
-      if (Math.random() < chance) spike = (evPanic ? 1.9 : 0.9) * evIntensity;
+    // Occasional ectopic beats (premature ventricular contractions)
+    // More common with stress or injury
+    let ectopicBeat = 0;
+    const ectopicChance = (stress > 5 ? 0.005 : 0) + (hpPct < 0.5 ? 0.008 : 0);
+    if (Math.random() < ectopicChance && p > 0.6 && p < 0.65) {
+      // Wide, bizarre QRS (PVC)
+      const pu = (p - 0.6) / 0.05;
+      ectopicBeat = 0.6 * Math.sin(pu * Math.PI);
     }
 
-    return y * amp + drift + jitter + spike;
+    // Panic event spikes (only during active panic events)
+    let panicSpike = 0;
+    if (evActive && evPanic) {
+      // Random large deflections during panic
+      const spikeChance = 0.12;
+      if (Math.random() < spikeChance) {
+        panicSpike = (Math.random() - 0.5) * 1.2 * evIntensity;
+      }
+    }
+
+    return y * amp + drift + healthWander + jitter + ectopicBeat + panicSpike;
   }
 
   function draw(it) {
