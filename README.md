@@ -69,12 +69,20 @@ What players see - their crew's vitals with real-time ECG animations and effect 
 
 **No installation required.**
 
-1.  Download the latest release (`biomon.exe`).
-2.  Double-click `biomon.exe`.
-3.  A terminal window will open showing the server address.
-4.  Open your browser to:
+1.  Download the latest release for your platform from [Releases](https://github.com/thedandroid/biomon/releases):
+    - **Windows**: `biomon-win-x64.exe.zip`
+    - **macOS**: `biomon-macos-x64.zip`
+    - **Linux**: `biomon-linux-x64.zip`
+2.  Extract the `.zip` file (contains the executable + `public/` folder).
+3.  Run the executable:
+    - **Windows**: Double-click `biomon-win-x64.exe`
+    - **macOS/Linux**: `./biomon-macos-x64` or `./biomon-linux-x64`
+4.  A terminal window will open showing the server address.
+5.  Open your browser to:
     - **GM View**: [http://localhost:3050/gm](http://localhost:3050/gm)
     - **Player View**: [http://localhost:3050/](http://localhost:3050/)
+
+**Note**: Keep the `public/` folder in the same directory as the executable. The `sessions/` directory will be created automatically in the current working directory.
 
 ### Option 2: Run from Source
 
@@ -251,13 +259,18 @@ npm run test:ui          # Interactive UI
 
 ### Building the Standalone App
 
-To create the `.exe` file yourself:
+To create the standalone executable yourself:
 
 ```bash
 npm run build
 ```
 
-This generates `biomon.exe` in the `dist/` directory.
+This generates:
+- Bundled server: `dist/server.bundled.cjs`
+- Executable: `dist/biomon-win-x64.exe` (or platform equivalent)
+- Static assets: `dist/public/` (copied automatically)
+
+The executable requires the `public/` folder to be in the same directory.
 
 ---
 
