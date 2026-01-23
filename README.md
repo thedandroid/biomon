@@ -52,12 +52,12 @@ What players see - their crew's vitals with real-time ECG animations and effect 
 
 ## Features
 
-- **Real-time crew monitoring** - Track health, stress, and resolve for all players
+- **Real-time crew monitoring** - Track health, stress, resolve, and fatigue for all players
 - **Integrated dice roller** - Automated Stress and Panic rolls with table lookup
 - **Auto-save & persistence** - Automatic state saving with campaign management
 - **Diegetic UI** - Medical terminal aesthetic with ECG waveforms
 - **GM & Player views** - Separate interfaces for game master and players
-- **Effect tracking** - Persistent panic/stress effects with visual indicators
+- **Effect tracking** - Persistent panic/stress effects and conditions with visual indicators
 - **Session management** - Save/load campaigns, export/import backups
 - **No database required** - File-based persistence, zero setup complexity
 
@@ -172,6 +172,7 @@ Access via the **SESSION** button in the GM view:
 Each player card displays:
 - **Name** and **ID**
 - **Health**, **Stress**, and **Resolve** sliders
+- **Fatigue toggle** - Click to mark/unmark a player as fatigued
 - **Active effects** (persistent panic/stress conditions)
 - **Roller panel** for triggering rolls
 
@@ -183,7 +184,7 @@ Each player card displays:
 - **Output** — Shows `d6` result, computed total, and resolved table entry (label + short description)
 - **APPLY** — Marks the roll as applied; adds persistent effect tag if applicable
 - **UNDO** — Reverses the last Apply (clears the effect if one was created)
-- **ACTIVE EFFECTS** — Persistent tags can be manually **CLEARED**
+- **ACTIVE EFFECTS** — Persistent tags (including Fatigue) can be manually **CLEARED**
 
 ### Roll Feed
 
@@ -202,13 +203,13 @@ The player view displays the full crew roster with real-time updates:
 Each player card shows:
 - **Name** and **ID**
 - **Health**, **Stress**, and **Resolve** levels
-- **Active effects** (persistent conditions)
+- **Active effects** (persistent conditions including Fatigue)
 - **Real-time ECG animation** reflecting their current state
 
 ### Visual Feedback
 
 - When a roll happens, the affected player's card shows a **brief alert banner** with the effect label
-- Persistent effects show as **tags** (label only)
+- Persistent effects (including Fatigue) show as **tags** with color-coded severity
 - **ECG animation changes**:
   - **Stress Roll** → Subtle warning / mild disturbance
   - **Panic Roll** → Strong warning / large spike
