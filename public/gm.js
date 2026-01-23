@@ -218,7 +218,10 @@ function rollerPanel(p) {
     out.innerHTML = `
         <div class="roller-out-header">
           <div class="mini">LAST ${escapeHtml(String(lr.type || "").toUpperCase())} ROLL</div>
-          <div class="mini timestamp">${escapeHtml(when.toLocaleTimeString())}</div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div class="mini timestamp">${escapeHtml(when.toLocaleTimeString())}</div>
+            <button class="btn-close-roll" data-act="clear-roll" title="Clear roll history">×</button>
+          </div>
         </div>
 
         <div class="roller-result-main">
@@ -332,6 +335,10 @@ function rollerPanel(p) {
 
     out.querySelector("[data-act='undo']").addEventListener("click", () => {
       socket.emit("roll:undo", { playerId: p.id, eventId: lr.eventId });
+    });
+
+    out.querySelector("[data-act='clear-roll']").addEventListener("click", () => {
+      socket.emit("roll:clear", { playerId: p.id });
     });
 
     wrap.appendChild(out);

@@ -637,6 +637,19 @@ io.on("connection", (socket) => {
     broadcast();
   });
 
+  socket.on("roll:clear", (payload) => {
+    const playerId = String(payload?.playerId ?? "");
+
+    const p = state.players.find((x) => x.id === playerId);
+    if (!p) return;
+
+    // Clear the lastRollEvent completely
+    p.lastRollEvent = null;
+
+    console.log(`[ROLL:CLEAR] ${p.name} - roll history cleared`);
+    broadcast();
+  });
+
   socket.on("effect:clear", (payload) => {
     const playerId = String(payload?.playerId ?? "");
     const effectId = String(payload?.effectId ?? "");
