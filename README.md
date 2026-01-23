@@ -65,13 +65,26 @@ What players see - their crew's vitals with real-time ECG animations and effect 
 
 ## Quick Start
 
-### Installation
+### Option 1: Standalone Application (Recommended)
+
+**No installation required.**
+
+1.  Download the latest release (`biomon.exe`).
+2.  Double-click `biomon.exe`.
+3.  A terminal window will open showing the server address.
+4.  Open your browser to:
+    - **GM View**: [http://localhost:3050/gm](http://localhost:3050/gm)
+    - **Player View**: [http://localhost:3050/](http://localhost:3050/)
+
+### Option 2: Run from Source
+
+#### Installation
 
 ```bash
 npm install
 ```
 
-### Running the Server
+#### Running the Server
 
 ```bash
 npm start
@@ -79,7 +92,7 @@ npm start
 node server.js
 ```
 
-### Access the App
+#### Access the App
 
 - **GM View**: [http://localhost:3050/gm](http://localhost:3050/gm)
 - **Player View**: [http://localhost:3050/](http://localhost:3050/)
@@ -235,6 +248,16 @@ npm run test:ui          # Interactive UI
 ```
 
 **Test Framework**: Vitest with 67 tests covering utilities, table logic, and Socket.io integration.
+
+### Building the Standalone App
+
+To create the `.exe` file yourself:
+
+```bash
+npm run build
+```
+
+This generates `biomon.exe` in the `dist/` directory.
 
 ---
 

@@ -60,6 +60,7 @@ const state = {
     // { id, name, health, maxHealth, stress: 0..10 }
   ],
   rollEvents: [],
+  missionLog: [],
   metadata: {
     campaignName: null,
     createdAt: null,
@@ -93,6 +94,7 @@ function loadAutosave() {
       // Restore state
       state.players = Array.isArray(loaded.players) ? loaded.players : [];
       state.rollEvents = Array.isArray(loaded.rollEvents) ? loaded.rollEvents : [];
+      state.missionLog = Array.isArray(loaded.missionLog) ? loaded.missionLog : [];
       state.metadata = loaded.metadata || {
         campaignName: null,
         createdAt: null,
@@ -132,6 +134,27 @@ function loadAutosave() {
   return { found: false };
 }
 
+// Max log entries to keep
+const MAX_LOG_ENTRIES = 100;
+
+function addLogEntry(type, message, details = null) {
+  const entry = {
+    id: newId(),
+    timestamp: Date.now(),
+    type, // "info", "stress", "panic", "health", "system"
+    message,
+    details,
+  };
+  
+  state.missionLog.unshift(entry); // Add to start (newest first)
+  
+  if (state.missionLog.length > MAX_LOG_ENTRIES) {
+    state.missionLog = state.missionLog.slice(0, MAX_LOG_ENTRIES);
+  }
+  
+  return entry;
+}
+
 // Save campaign with custom name
 function saveCampaign(campaignName) {
   try {
@@ -166,6 +189,7 @@ function loadCampaign(filename) {
     
     state.players = Array.isArray(loaded.players) ? loaded.players : [];
     state.rollEvents = Array.isArray(loaded.rollEvents) ? loaded.rollEvents : [];
+    state.missionLog = Array.isArray(loaded.missionLog) ? loaded.missionLog : [];
     state.metadata = loaded.metadata || {
       campaignName: null,
       createdAt: new Date().toISOString(),
@@ -220,6 +244,7 @@ function listCampaigns() {
 function clearSession() {
   state.players = [];
   state.rollEvents = [];
+  state.missionLog = [];
   state.metadata = {
     campaignName: null,
     createdAt: new Date().toISOString(),
@@ -286,12 +311,17 @@ io.on("connection", (socket) => {
       lastRollEvent: null,
     });
 
+    addLogEntry("system", `CREW MEMBER ADDED: ${name}`);
     broadcast();
   });
 
   socket.on("player:remove", (payload) => {
     const id = String(payload?.id ?? "");
+    const p = state.players.find(x => x.id === id);
+    const name = p ? p.name : "UNKNOWN";
+    
     state.players = state.players.filter((p) => p.id !== id);
+    addLogEntry("system", `CREW MEMBER REMOVED: ${name}`);
     broadcast();
   });
 
@@ -312,7 +342,16 @@ io.on("connection", (socket) => {
 
     if (payload?.health !== undefined) {
       const maxH = clamp(p.maxHealth ?? DEFAULT_MAX_HEALTH, 1, MAX_HEALTH_CAP);
+      const oldHealth = p.health;
       p.health = clamp(payload.health, 0, maxH);
+      
+      if (p.health !== oldHealth) {
+        if (p.health === 0) {
+          addLogEntry("health", `${p.name} CRITICAL: HEALTH DROPPED TO 0`);
+        } else if (p.health < oldHealth) {
+          // Optional: log every damage? Maybe too noisy. Keeping to critical events.
+        }
+      }
     }
 
     if (payload?.stress !== undefined)
@@ -327,6 +366,8 @@ io.on("connection", (socket) => {
   socket.on("party:clear", () => {
     state.players = [];
     state.rollEvents = [];
+    state.missionLog = [];
+    addLogEntry("system", "PARTY CLEARED");
     broadcast();
   });
 
@@ -427,12 +468,21 @@ io.on("connection", (socket) => {
       timestamp,
       applied: false,
       appliedEffectId: null,
+      appliedStressDuplicate: false,
     };
 
     pushRollEvent(rollEvent);
     console.log(
       `[ROLL:${rollType.toUpperCase()}] ${p.name} d6=${die} stress=${stress} resolve=${resolve} mod=${modifiers} => total=${total} (${entry.id})`,
     );
+    
+    // Log the roll itself
+    addLogEntry(
+      rollType, 
+      `${p.name.toUpperCase()} ${rollType.toUpperCase()} ROLL: ${entry.label || entry.id}`, 
+      `Rolled ${total} (Die: ${die} + Stress: ${stress} - Resolve: ${resolve} + Mod: ${modifiers})`,
+    );
+    
     broadcast();
   });
 
@@ -487,9 +537,11 @@ io.on("connection", (socket) => {
         MAX_STRESS,
       );
       lr.appliedEffectId = null;
+      lr.appliedStressDuplicate = true;
       console.log(
         `[ROLL:APPLY] ${p.name} stress duplicate=${entry.id} -> stress+1 (stress=${p.stress})`,
       );
+      addLogEntry("stress", `${p.name} DUPLICATE STRESS RESULT: +1 STRESS LEVEL (Total: ${p.stress})`);
       broadcast();
       return;
     }
@@ -515,9 +567,11 @@ io.on("connection", (socket) => {
       console.log(
         `[ROLL:APPLY] ${p.name} ${rollType} -> effect=${effect.type} (${effect.id})`,
       );
+      addLogEntry("info", `${p.name} CONDITION APPLIED: ${entry.label}`);
     } else {
       lr.appliedEffectId = null;
       console.log(`[ROLL:APPLY] ${p.name} ${rollType} (no persistent effect)`);
+      addLogEntry("info", `${p.name} RESULT APPLIED: ${entry.label}`);
     }
 
     broadcast();
@@ -537,10 +591,21 @@ io.on("connection", (socket) => {
 
     const hadEffect = Boolean(lr.appliedEffectId);
 
-    // If Apply created a persistent effect, clear it; otherwise just revert the applied flag.
+    // If Apply created a persistent effect, clear it.
     if (lr.appliedEffectId) {
       const eff = p.activeEffects.find((e) => e.id === lr.appliedEffectId);
       if (eff && !eff.clearedAt) eff.clearedAt = Date.now();
+    }
+    
+    // If Apply caused a duplicate stress increment, revert it.
+    if (lr.appliedStressDuplicate) {
+      p.stress = clampInt(
+        clampInt(p.stress ?? 0, 0, MAX_STRESS) - 1,
+        0,
+        MAX_STRESS,
+      );
+      lr.appliedStressDuplicate = false;
+      addLogEntry("info", `${p.name} UNDO: REVERTED +1 STRESS (Total: ${p.stress})`);
     }
 
     lr.applied = false;
@@ -579,6 +644,48 @@ io.on("connection", (socket) => {
     }
 
     console.log(`[EFFECT:CLEAR] ${p.name} effect=${eff.type} (${eff.id})`);
+    addLogEntry("info", `${p.name} CONDITION CLEARED: ${eff.label}`);
+    broadcast();
+  });
+
+  socket.on("condition:toggle", (payload) => {
+    const playerId = String(payload?.playerId ?? "");
+    const condition = String(payload?.condition ?? "").toLowerCase();
+    
+    // Validate condition name - Only "fatigue" is supported now
+    const VALID_CONDITIONS = ["fatigue"];
+    if (!VALID_CONDITIONS.includes(condition)) return;
+
+    const p = state.players.find((x) => x.id === playerId);
+    if (!p) return;
+    ensurePlayerFields(p);
+
+    const type = `condition_${condition}`;
+    const label = condition.toUpperCase();
+    
+    // Check if already active (and not cleared)
+    const existing = (p.activeEffects || []).find(e => e.type === type && !e.clearedAt);
+
+    if (existing) {
+      // Toggle OFF
+      existing.clearedAt = Date.now();
+      console.log(`[CONDITION:REMOVE] ${p.name} ${condition}`);
+      addLogEntry("info", `${p.name} RECOVERED FROM: ${label}`);
+    } else {
+      // Toggle ON
+      const effect = {
+        id: newId(),
+        type,
+        label,
+        severity: 1, 
+        createdAt: Date.now(),
+        durationType: "manual",
+        clearedAt: null,
+      };
+      p.activeEffects.push(effect);
+      console.log(`[CONDITION:ADD] ${p.name} ${condition}`);
+      addLogEntry("info", `${p.name} IS NOW FATIGUED`);
+    }
     broadcast();
   });
 
@@ -590,7 +697,10 @@ io.on("connection", (socket) => {
     const campaignName = String(payload?.campaignName || "").trim() || "unnamed";
     const result = saveCampaign(campaignName);
     socket.emit("session:save:result", result);
-    if (result.success) broadcast();
+    if (result.success) {
+      addLogEntry("system", `CAMPAIGN SAVED: ${campaignName}`);
+      broadcast();
+    }
   });
 
   socket.on("session:load", (payload) => {
@@ -601,7 +711,10 @@ io.on("connection", (socket) => {
     }
     const result = loadCampaign(filename);
     socket.emit("session:load:result", result);
-    if (result.success) broadcast();
+    if (result.success) {
+      addLogEntry("system", `CAMPAIGN LOADED: ${state.metadata.campaignName || filename}`);
+      broadcast();
+    }
   });
 
   socket.on("session:list", () => {
@@ -611,6 +724,7 @@ io.on("connection", (socket) => {
 
   socket.on("session:clear", () => {
     clearSession();
+    addLogEntry("system", "SESSION CLEARED");
     broadcast();
   });
 
@@ -627,6 +741,7 @@ io.on("connection", (socket) => {
       
       state.players = Array.isArray(payload.players) ? payload.players : [];
       state.rollEvents = Array.isArray(payload.rollEvents) ? payload.rollEvents : [];
+      state.missionLog = Array.isArray(payload.missionLog) ? payload.missionLog : [];
       state.metadata = payload.metadata || {
         campaignName: null,
         createdAt: new Date().toISOString(),

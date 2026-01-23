@@ -378,6 +378,15 @@ function classifyHealth(p) {
 
   if (hpPct <= 0.2) return { label: "CRITICAL", color: "var(--bad)" };
   if (hpPct <= 0.5) return { label: "COMPROMISED", color: "var(--warn)" };
+  
+  // Check for conditions that affect status display
+  const live = activeEffects(p);
+  const isFatigued = live.some(e => e.type === "condition_fatigue");
+  
+  if (isFatigued) {
+    return { label: "FATIGUED", color: "var(--warn)" };
+  }
+  
   return { label: "STABLE", color: "var(--ok)" };
 }
 
@@ -406,19 +415,40 @@ function computeRollFlash(p) {
 
   // Once the GM applies the roll, players should only see the resulting effect tags.
   if (lr.applied) {
+    // If we haven't already marked this event as seen/cleared, do it now
+    const prev = alertState.seenEventIdByPlayer.get(p.id);
+    if (prev !== lr.eventId) {
+      alertState.seenEventIdByPlayer.set(p.id, lr.eventId);
+    }
+    // Ensure we don't flash for this event anymore
     alertState.flashUntilByPlayer.set(p.id, 0);
     return { show: false, kind: null };
   }
 
   const prev = alertState.seenEventIdByPlayer.get(p.id);
-  if (prev !== lr.eventId) {
-    alertState.seenEventIdByPlayer.set(p.id, lr.eventId);
-    alertState.flashUntilByPlayer.set(p.id, Date.now() + 12000);
+  
+  // If we've already seen this event ID and the flash timer expired, don't show it again.
+  // This prevents refresh from re-showing an old, unapplied roll that timed out locally.
+  if (prev === lr.eventId) {
+    const until = alertState.flashUntilByPlayer.get(p.id) || 0;
+    const show = Date.now() < until;
+    return { show, kind: lr.type === "panic" ? "panic" : "stress" };
   }
 
-  const until = alertState.flashUntilByPlayer.get(p.id) || 0;
-  const show = Date.now() < until;
-  return { show, kind: lr.type === "panic" ? "panic" : "stress" };
+  // New event ID detected (or refresh with unseen event)
+  // Check timestamp to ensure it's recent (e.g., within last 12 seconds)
+  // This prevents stale rolls from showing on page refresh if they are old but unapplied
+  const isRecent = (Date.now() - (lr.timestamp || 0)) < 12000;
+  
+  if (isRecent) {
+    alertState.seenEventIdByPlayer.set(p.id, lr.eventId);
+    alertState.flashUntilByPlayer.set(p.id, Date.now() + 12000);
+    return { show: true, kind: lr.type === "panic" ? "panic" : "stress" };
+  }
+
+  // If it's old and unapplied, mark as seen so we don't check timestamp again, but don't show
+  alertState.seenEventIdByPlayer.set(p.id, lr.eventId);
+  return { show: false, kind: null };
 }
 
 function dotClassForHealth(statusLabel) {
@@ -426,6 +456,7 @@ function dotClassForHealth(statusLabel) {
   case "CRITICAL":
     return "dot-bad";
   case "COMPROMISED":
+  case "WEAKENED":
     return "dot-warn";
   default:
     return "dot-ok";
@@ -589,7 +620,13 @@ function render() {
       for (const e of live) {
         const tag = document.createElement("div");
         const isPanic = String(e.type || "").startsWith("panic_");
-        tag.className = `tag ${isPanic ? "tag-panic" : "tag-stress"}`;
+        const isCondition = String(e.type || "").startsWith("condition_");
+        
+        let tagClass = "tag-stress";
+        if (isPanic) tagClass = "tag-panic";
+        else if (isCondition) tagClass = "tag-condition";
+        
+        tag.className = `tag ${tagClass}`;
         tag.textContent = String(e.label || "EFFECT").toUpperCase();
         tags.appendChild(tag);
       }

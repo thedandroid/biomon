@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "BIOMON - Alien RPG Crew Vitals & Stress Monitor",
   "main": "server.js",
+  "bin": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
@@ -11,9 +12,15 @@
     "test:watch": "vitest --watch",
     "test:coverage": "vitest --coverage",
     "test:ui": "vitest --ui",
+    "build": "pkg . --targets node18-win-x64 --output dist/biomon",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "prepare": "husky"
+  },
+  "pkg": {
+    "assets": [
+      "public/**/*"
+    ]
   },
   "keywords": [
     "alien-rpg",
@@ -39,6 +46,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
     "nodemon": "^3.1.11",
+    "pkg": "^5.8.1",
     "socket.io-client": "^4.8.3",
     "vitest": "^4.0.18"
   }

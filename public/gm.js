@@ -10,9 +10,10 @@ const maxHealthEl = document.getElementById("maxHealth");
 const stressEl = document.getElementById("stress");
 const resolveEl = document.getElementById("resolve");
 const gmList = document.getElementById("gmList");
+const missionLog = document.getElementById("missionLog");
 const clearPartyBtn = document.getElementById("clearParty");
 
-let lastState = { players: [] };
+let lastState = { players: [], missionLog: [] };
 let isInitialLoad = true;
 
 // Ephemeral UI state (not synced)
@@ -91,6 +92,7 @@ function render() {
       socket.emit("player:update", { id: p.id, resolve: Number(v) });
     });
 
+    const conditions = conditionToggles(p);
     const effects = effectsPanel(p);
     const roller = rollerPanel(p);
 
@@ -100,11 +102,46 @@ function render() {
     card.appendChild(healthRow);
     card.appendChild(stressRow);
     card.appendChild(resolveRow);
+    card.appendChild(conditions);
     card.appendChild(roller);
     card.appendChild(effects);
 
     gmList.appendChild(card);
   }
+}
+
+function conditionToggles(p) {
+  const wrap = document.createElement("div");
+  wrap.className = "conditions-row";
+  
+  // Single condition supported now
+  const condition = "FATIGUE";
+  
+  // Helper to check if condition is active
+  const isActive = (c) => {
+    const type = `condition_${c.toLowerCase()}`;
+    return (p.activeEffects || []).some(e => e.type === type && !e.clearedAt);
+  };
+
+  wrap.innerHTML = "<div class=\"mini\" style=\"margin-bottom: 6px;\">CONDITION</div>";
+  
+  const active = isActive(condition);
+  const btn = document.createElement("button");
+  // Use btn-block style logic (width 100%) or just let it fill the div if we don't use the grid class
+  btn.className = `btn ${active ? "btn-condition-active" : "btn-condition-inactive"}`;
+  btn.style.width = "100%"; 
+  btn.textContent = condition;
+  btn.title = `Toggle ${condition} condition`;
+  
+  btn.addEventListener("click", () => {
+    socket.emit("condition:toggle", { 
+      playerId: p.id, 
+      condition: condition.toLowerCase(), 
+    });
+  });
+  
+  wrap.appendChild(btn);
+  return wrap;
 }
 
 function rollerPanel(p) {
@@ -176,84 +213,89 @@ function rollerPanel(p) {
     const when = new Date(Number(lr.timestamp || Date.now()));
     const showLabel = lr.appliedTableEntryLabel || lr.tableEntryLabel || "";
     const showDesc =
-      lr.appliedTableEntryDescription || lr.tableEntryDescription || "";
+        lr.appliedTableEntryDescription || lr.tableEntryDescription || "";
 
     out.innerHTML = `
-      <div class="roller-out-top">
-        <div class="mini">LAST ${escapeHtml(String(lr.type || "").toUpperCase())} ROLL</div>
-        <div class="mini">${escapeHtml(when.toLocaleTimeString())}</div>
-      </div>
-      <div class="roller-out-main">
-        <div class="roller-math">d6=<span class="pill">${escapeHtml(String(lr.die))}</span> total=<span class="pill">${escapeHtml(String(lr.total))}</span></div>
-        <div class="roller-entry">
-          <div class="roller-entry-label">${escapeHtml(showLabel)}</div>
-          <div class="mini" style="margin-top:6px; line-height:1.35">${escapeHtml(showDesc)}</div>
-          ${lr.duplicateAdjusted && lr.duplicateNote ? `<div class="mini" style="margin-top:8px; color: var(--warn)">${escapeHtml(String(lr.duplicateNote))}</div>` : ""}
+        <div class="roller-out-header">
+          <div class="mini">LAST ${escapeHtml(String(lr.type || "").toUpperCase())} ROLL</div>
+          <div class="mini timestamp">${escapeHtml(when.toLocaleTimeString())}</div>
         </div>
-      </div>
-      <div class="roller-out-actions">
-        <div class="roller-out-actions-left">
+
+        <div class="roller-result-main">
+          <div class="roller-big-number">${escapeHtml(String(lr.total))}</div>
+          <div class="roller-result-text">
+            <div class="roller-entry-label">${escapeHtml(showLabel)}</div>
+            <div class="roller-entry-desc">${escapeHtml(showDesc)}</div>
+          </div>
+        </div>
+
+        <div class="roller-math-row">
+           <span class="pill-sm">D6: ${escapeHtml(String(lr.die))}</span>
+           <span class="pill-sm">Stress: ${escapeHtml(String(lr.stress))}</span>
+           ${lr.resolve ? `<span class="pill-sm">Resolve: -${escapeHtml(String(lr.resolve))}</span>` : ""}
+           ${lr.modifiers ? `<span class="pill-sm">Mod: ${lr.modifiers > 0 ? "+" : ""}${escapeHtml(String(lr.modifiers))}</span>` : ""}
+        </div>
+
+        ${lr.duplicateAdjusted && lr.duplicateNote ? `
+          <div class="roller-note warn">
+            <span class="icon">⚠</span> ${escapeHtml(String(lr.duplicateNote))}
+          </div>` : ""
+}
+
+        <div class="roller-actions-area">
           <div class="roller-apply-slot"></div>
-          <button class="btn ${lr.applied ? "btn-primary" : "btn-ghost"}" data-act="undo" ${lr.applied ? "" : "disabled"}>UNDO</button>
+          <button class="btn btn-ghost btn-sm" data-act="undo" ${lr.applied ? "" : "disabled"}>UNDO</button>
         </div>
-        <div class="roller-out-actions-right"></div>
-      </div>
-    `;
+      `;
 
     const applySlot = out.querySelector(".roller-apply-slot");
-    const rightSlot = out.querySelector(".roller-out-actions-right");
+      
+    // Manual Stress Adjustment (if delta exists)
     const delta = Number(
       lr.appliedTableEntryStressDelta !== null &&
-        lr.appliedTableEntryStressDelta !== undefined
+          lr.appliedTableEntryStressDelta !== undefined
         ? lr.appliedTableEntryStressDelta
         : lr.tableEntryStressDelta,
     );
 
-    if (Number.isFinite(delta) && delta !== 0) {
-      const b = document.createElement("button");
-      b.className = "btn btn-ghost";
-      b.title = "Adjust this crew member's stress (manual, not automatic).";
-      b.textContent = `STRESS ${delta > 0 ? "+" : "-"}${Math.abs(delta)}`;
-      b.addEventListener("click", () => {
-        socket.emit("player:update", {
-          id: p.id,
-          stress: Number(p.stress || 0) + delta,
-        });
-      });
-      rightSlot.appendChild(b);
+    if (Number.isFinite(delta) && delta !== 0 && !lr.applied) {
+      // Only show this hint if not applied yet, or maybe keep it?
+      // Actually, typically we want to auto-apply stress changes if possible, 
+      // but the system is manual. Let's keep the manual button but style it better.
     }
-
+      
+    // We will rebuild the actions logic slightly cleaner
     const options = Array.isArray(lr.applyOptions) ? lr.applyOptions : null;
     const isDuplicateStress =
-      !lr.applied &&
-      lr.type !== "panic" &&
-      (Array.isArray(p.activeEffects) ? p.activeEffects : []).some(
-        (e) =>
-          !e?.clearedAt &&
-          String(e?.type ?? "") === String(lr.tableEntryId ?? ""),
-      );
+        !lr.applied &&
+        lr.type !== "panic" &&
+        (Array.isArray(p.activeEffects) ? p.activeEffects : []).some(
+          (e) =>
+            !e?.clearedAt &&
+            String(e?.type ?? "") === String(lr.tableEntryId ?? ""),
+        );
+
     if (lr.applied) {
       const b = document.createElement("button");
-      b.className = "btn btn-ghost";
-      b.disabled = true;
-      b.title = "ALREADY APPLIED";
-      b.textContent = "APPLIED";
+      b.className = "btn btn-ghost btn-sm btn-disabled";
+      b.innerHTML = "<span class=\"check-icon\">✓</span> APPLIED";
       applySlot.appendChild(b);
     } else if (isDuplicateStress) {
       const b = document.createElement("button");
-      b.className = "btn btn-primary";
+      b.className = "btn btn-primary btn-sm btn-glow";
       b.title = "Duplicate stress response already active: apply as STRESS +1.";
-      b.textContent = "STRESS +1";
+      b.textContent = "APPLY: STRESS +1";
       b.addEventListener("click", () => {
         socket.emit("roll:apply", { playerId: p.id, eventId: lr.eventId });
       });
       applySlot.appendChild(b);
     } else if (options && options.length >= 2) {
-      for (let i = 0; i < Math.min(2, options.length); i++) {
-        const opt = options[i];
+      // Multi-option handling
+      options.forEach((opt, idx) => {
         const b = document.createElement("button");
-        b.className = `btn ${i === 0 ? "btn-primary" : "btn-ghost"}`;
-        b.textContent = String(opt.label || "APPLY");
+        // Highlight first option as primary
+        b.className = `btn btn-sm ${idx === 0 ? "btn-primary" : "btn-ghost"}`;
+        b.textContent = String(opt.label || "APPLY").toUpperCase();
         b.addEventListener("click", () => {
           socket.emit("roll:apply", {
             playerId: p.id,
@@ -262,16 +304,32 @@ function rollerPanel(p) {
           });
         });
         applySlot.appendChild(b);
-      }
+      });
     } else {
       const b = document.createElement("button");
-      b.className = "btn btn-primary";
-      b.textContent = "APPLY";
+      b.className = "btn btn-primary btn-sm btn-glow";
+      b.textContent = "APPLY EFFECT";
       b.addEventListener("click", () => {
         socket.emit("roll:apply", { playerId: p.id, eventId: lr.eventId });
       });
       applySlot.appendChild(b);
     }
+
+    // Add the stress adjustment button *after* the main apply button if relevant
+    if (Number.isFinite(delta) && delta !== 0) {
+      const b = document.createElement("button");
+      b.className = "btn btn-ghost btn-sm";
+      b.title = "Adjust this crew member's stress (manual).";
+      b.innerHTML = `STRESS <span style="color:${delta > 0 ? "var(--warn)" : "var(--ok)"}">${delta > 0 ? "+" : ""}${delta}</span>`;
+      b.addEventListener("click", () => {
+        socket.emit("player:update", {
+          id: p.id,
+          stress: Number(p.stress || 0) + delta,
+        });
+      });
+      applySlot.appendChild(b); // Add to same slot
+    }
+
     out.querySelector("[data-act='undo']").addEventListener("click", () => {
       socket.emit("roll:undo", { playerId: p.id, eventId: lr.eventId });
     });
@@ -287,7 +345,7 @@ function effectsPanel(p) {
   wrap.className = "effects";
 
   const live = (Array.isArray(p.activeEffects) ? p.activeEffects : []).filter(
-    (e) => !e.clearedAt,
+    (e) => !e.clearedAt && e.type !== "condition_fatigue",
   );
   wrap.innerHTML = `
     <div class="effects-hd">
@@ -295,6 +353,7 @@ function effectsPanel(p) {
       <div class="mini">${escapeHtml(String(live.length))}</div>
     </div>
   `;
+
 
   if (!live.length) {
     const empty = document.createElement("div");
@@ -467,11 +526,52 @@ clearPartyBtn.addEventListener("click", () => {
 });
 
 socket.on("state", (s) => {
-  lastState = s || { players: [] };
+  lastState = s || { players: [], missionLog: [] };
   isInitialLoad = false; // Clear initial loading state
   render();
+  renderLog();
   updateSessionStatus(s);
 });
+
+function renderLog() {
+  if (!missionLog) return;
+  
+  const entries = Array.isArray(lastState.missionLog) ? lastState.missionLog : [];
+  
+  // Diff check: if same length and first ID matches, skip (optimization)
+  const currentFirst = missionLog.querySelector(".log-entry");
+  if (currentFirst && entries.length > 0 && currentFirst.dataset.id === entries[0].id) {
+    return;
+  }
+  
+  missionLog.innerHTML = "";
+  
+  if (entries.length === 0) {
+    const el = document.createElement("div");
+    el.className = "log-entry system";
+    el.innerHTML = `<span class="log-ts">[${new Date().toLocaleTimeString()}]</span> <span class="log-msg">READY.</span>`;
+    missionLog.appendChild(el);
+    return;
+  }
+  
+  // Render newest first (state.missionLog is sorted newest first)
+  for (const entry of entries) {
+    const row = document.createElement("div");
+    row.className = `log-entry ${entry.type || "info"}`;
+    row.dataset.id = entry.id;
+    
+    const ts = new Date(entry.timestamp).toLocaleTimeString();
+    
+    let html = `<span class="log-ts">[${ts}]</span> <span class="log-msg">${escapeHtml(entry.message)}</span>`;
+    
+    if (entry.details) {
+      html += `<span class="log-detail">${escapeHtml(entry.details)}</span>`;
+    }
+    
+    row.innerHTML = html;
+    missionLog.appendChild(row);
+  }
+}
 
 // ============================================================
 // SESSION MANAGEMENT
