@@ -48,6 +48,12 @@ What players see - their crew's vitals with real-time ECG animations and effect 
 
 ![Player View](screenshots/player-view.png)
 
+### Mission Log
+
+The GM's roll feed showing the complete history of stress and panic events.
+
+![Mission Log](screenshots/mission-log.png)
+
 ---
 
 ## Features
