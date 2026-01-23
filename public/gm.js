@@ -830,5 +830,26 @@ socket.on("connect_error", () => {
   });
 });
 
+// Button ripple effect on click
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest(".btn");
+  if (!btn || btn.disabled) return;
+  
+  // Remove existing ripple class if present
+  btn.classList.remove("ripple");
+  
+  // Force reflow to restart animation
+  void btn.offsetWidth;
+  
+  // Add ripple class
+  btn.classList.add("ripple");
+  
+  // Remove class after animation completes
+  setTimeout(() => {
+    btn.classList.remove("ripple");
+  }, 600);
+});
+
 // Initial render to show loading state
 render();
+

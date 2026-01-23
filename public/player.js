@@ -713,4 +713,18 @@ socket.on("state", (s) => {
   render();
 });
 
+// Global click handler for button ripple effect
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest(".btn");
+  if (!btn || btn.classList.contains("btn-disabled")) return;
+  
+  btn.classList.remove("ripple");
+  void btn.offsetWidth; // Force reflow
+  btn.classList.add("ripple");
+  
+  setTimeout(() => {
+    btn.classList.remove("ripple");
+  }, 600);
+});
+
 render();

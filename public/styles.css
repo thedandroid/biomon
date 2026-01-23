@@ -353,12 +353,31 @@ body::after {
   border-radius: 50%;
   background: rgba(185, 255, 245, 0.2);
   transform: translate(-50%, -50%);
-  transition: width 0.6s, height 0.6s;
+  transition: width 0.6s ease-out, height 0.6s ease-out, opacity 0.6s ease-out;
+  opacity: 0;
 }
 
-.btn:active::before {
+.btn.ripple::before {
   width: 300px;
   height: 300px;
+  opacity: 1;
+}
+
+@keyframes ripple-fade {
+  0% {
+    width: 0;
+    height: 0;
+    opacity: 1;
+  }
+  100% {
+    width: 300px;
+    height: 300px;
+    opacity: 0;
+  }
+}
+
+.btn.ripple::before {
+  animation: ripple-fade 0.6s ease-out;
 }
 
 .btn:hover {
