@@ -16,7 +16,7 @@ const alertState = {
 
 // --- ECG animation engine (per-card scrolling waveform) ---
 const ecgEngine = (() => {
-  const items = new Map(); // id -> { canvas, ctx, buf, x, phase, t, params }
+  const items = new Map(); // id -> { canvas, ctx, buf, x, phase, t, params, hrVariability, baselineVariation }
   let raf = null;
 
   function nowMs() {
@@ -36,7 +36,9 @@ const ecgEngine = (() => {
         buf: new Float32Array(canvas.width).fill(0), // Start with zeros
         x: 0,
         phase: Math.random() * 10,
-        t: 0,
+        t: Math.random() * 100, // Random initial time offset for desynchronization
+        hrVariability: 0.95 + Math.random() * 0.1, // Individual heart rate variation (0.95-1.05)
+        baselineVariation: Math.random() * 0.15 - 0.075, // Unique baseline electrical activity (-0.075 to +0.075)
         params: {
           health: 5,
           maxHealth: 5,
@@ -86,6 +88,7 @@ const ecgEngine = (() => {
     // If health is 0, flatline with minimal electrical noise
     if (hp <= 0) {
       it.t += 1 / 60;
+      it.currentBPM = 0; // Flatline = no heartbeat
       const tinyDrift = Math.sin((it.t * 0.1 + it.phase) * Math.PI * 2) * 0.002;
       const tinyNoise = (Math.random() - 0.5) * 0.006;
       return tinyDrift + tinyNoise;
@@ -95,11 +98,15 @@ const ecgEngine = (() => {
     // Baseline: 60 BPM
     // Stress: +5 BPM per stress point (max +50 at stress 10)
     // Low health: +20 BPM when critically injured (compensatory tachycardia)
+    // Individual variability: Each person has slightly different resting heart rate
     const baseBPM = 60;
     const stressBPM = stress * 5;
     const injuryBPM = hpPct < 0.3 ? (1 - hpPct) * 20 : 0;
-    const bpm = baseBPM + stressBPM + injuryBPM; // Range: 60-130 BPM
+    const bpm = (baseBPM + stressBPM + injuryBPM) * it.hrVariability; // Apply individual variation
     const hz = bpm / 60;
+    
+    // Store current BPM for display
+    it.currentBPM = Math.round(bpm);
 
     // Amplitude effects
     // Lower health -> weaker R wave (poor cardiac output)
@@ -128,35 +135,39 @@ const ecgEngine = (() => {
     
     // P wave (atrial depolarization)
     // Smaller with high stress (anxiety flattens P wave)
-    const pWaveAmp = 0.18 * (1 - stress * 0.03);
+    // Individual variation in P wave morphology (some people naturally have taller P waves)
+    const pWaveAmp = 0.18 * (1 - stress * 0.03) * (0.85 + it.baselineVariation);
     if (p > 0.08 && p < 0.16) {
       const u = (p - 0.08) / 0.08;
       y += pWaveAmp * Math.sin(u * Math.PI);
     }
     
     // QRS complex (ventricular depolarization)
+    // Individual variation in QRS morphology
+    const qrsVariation = 0.95 + it.baselineVariation * 0.3;
     if (p > 0.20 && p < 0.28) {
       const u = (p - 0.20) / 0.08;
       
       // Q wave (small dip)
       if (u < 0.25) {
-        y += -0.2 * Math.sin(u * 4 * Math.PI);
+        y += -0.2 * qrsVariation * Math.sin(u * 4 * Math.PI);
       } 
       // R wave (tall spike) - main feature
       else if (u < 0.75) {
         const ru = (u - 0.25) / 0.5;
-        y += 0.9 * Math.sin(ru * Math.PI);
+        y += 0.9 * qrsVariation * Math.sin(ru * Math.PI);
       } 
       // S wave (small dip)
       else {
         const su = (u - 0.75) / 0.25;
-        y += -0.15 * Math.sin(su * Math.PI);
+        y += -0.15 * qrsVariation * Math.sin(su * Math.PI);
       }
     }
     
     // T wave (ventricular repolarization)
     // Taller and wider with high stress (stress-induced T wave changes)
-    const tWaveAmp = 0.3 * (1 + stress * 0.04);
+    // Individual variation in T wave amplitude
+    const tWaveAmp = 0.3 * (1 + stress * 0.04) * (0.9 + it.baselineVariation * 0.5);
     const tWaveWidth = stress > 7 ? 0.18 : 0.16; // Wider when very stressed
     const tWaveStart = 0.34;
     const tWaveEnd = tWaveStart + tWaveWidth;
@@ -193,10 +204,10 @@ const ecgEngine = (() => {
     
     // High-frequency noise (muscle tremor, electrical interference)
     // Increases with stress (muscle tension) and low health (shivering, weakness)
-    const noiseLevel = 0.008 + (stress / 10) * 0.015 + (1 - hpPct) * 0.01;
-    const jitter = (stress > 0 || hpPct < 0.8 || evActive)
-      ? (Math.random() - 0.5) * (noiseLevel + evIntensity * (evPanic ? 0.04 : 0.02))
-      : 0;
+    // ALWAYS present at low levels (real ECGs always have electrical noise)
+    const baseNoise = 0.004; // Minimal baseline electrical noise
+    const noiseLevel = baseNoise + 0.004 + (stress / 10) * 0.015 + (1 - hpPct) * 0.01;
+    const jitter = (Math.random() - 0.5) * (noiseLevel + evIntensity * (evPanic ? 0.04 : 0.02));
 
     // Occasional ectopic beats (premature ventricular contractions)
     // More common with stress or injury
@@ -354,7 +365,12 @@ const ecgEngine = (() => {
     else raf = null;
   }
 
-  return { upsert, removeMissing };
+  function getBPM(id) {
+    const it = items.get(id);
+    return it ? (it.currentBPM !== undefined ? it.currentBPM : 60) : 60;
+  }
+
+  return { upsert, removeMissing, getBPM };
 })();
 
 function clamp(n, lo, hi) {
@@ -640,12 +656,18 @@ function render() {
     const ecgLabel = document.createElement("div");
     ecgLabel.className = "ecg-label";
     ecgLabel.textContent = "ECG";
+    const ecgHR = document.createElement("div");
+    ecgHR.className = "ecg-hr";
+    ecgHR.setAttribute("data-player-id", p.id); // Store player ID for updates
+    const currentBPM = ecgEngine.getBPM(p.id);
+    ecgHR.textContent = `${currentBPM} BPM`;
     const ecg = document.createElement("canvas");
     ecg.className = "ecg";
     ecg.width = 520; // internal resolution; CSS scales
     ecg.height = 54;
 
     ecgWrap.appendChild(ecgLabel);
+    ecgWrap.appendChild(ecgHR);
     ecgWrap.appendChild(ecg);
 
     card.appendChild(bars);
@@ -676,6 +698,24 @@ function render() {
     // (ECG patch: could not auto-place; please re-run)
   }
   ecgEngine.removeMissing(new Set(state.players.map((p) => p.id)));
+  
+  // Update heart rate displays
+  updateHeartRateDisplays();
+}
+
+function updateHeartRateDisplays() {
+  const hrLabels = document.querySelectorAll(".ecg-hr");
+  hrLabels.forEach((label) => {
+    const playerId = label.getAttribute("data-player-id");
+    if (playerId) {
+      const currentBPM = ecgEngine.getBPM(playerId);
+      if (currentBPM === 0) {
+        label.textContent = "---";
+      } else {
+        label.textContent = `${currentBPM} BPM`;
+      }
+    }
+  });
 }
 
 function bar(label, valueText, pct, isStress) {
@@ -712,5 +752,8 @@ socket.on("state", (s) => {
   state = s || { players: [] };
   render();
 });
+
+// Update heart rate displays every 500ms for smooth updates
+setInterval(updateHeartRateDisplays, 500);
 
 render();

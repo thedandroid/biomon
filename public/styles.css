@@ -820,6 +820,17 @@ canvas.ecg {
   pointer-events: none;
   mix-blend-mode: screen;
 }
+.ecg-hr {
+  position: absolute;
+  top: 4px;
+  right: 10px;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: rgba(118, 215, 201, 0.75);
+  pointer-events: none;
+  mix-blend-mode: screen;
+  font-variant-numeric: tabular-nums;
+}
 
 /* GM Log Terminal */
 .panel-log {
