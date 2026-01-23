@@ -27,12 +27,12 @@ const ecgEngine = (() => {
     const needsInit = !it;
     
     if (needsInit) {
-      // First time seeing this player ID - create new state
+      // First time seeing this player ID - create new state with minimal defaults
       const ctx = canvas.getContext("2d");
       it = {
         canvas,
         ctx,
-        buf: new Float32Array(canvas.width).fill(0),
+        buf: new Float32Array(canvas.width),
         x: 0,
         phase: Math.random() * 10,
         t: 0,
@@ -51,10 +51,10 @@ const ecgEngine = (() => {
       it.ctx = canvas.getContext("2d");
     }
     
-    // Always update params
+    // Always update params FIRST
     it.params = { ...it.params, ...params };
     
-    // Pre-fill buffer only on first init, using the actual params
+    // Pre-fill buffer only on first init, AFTER params are set
     if (needsInit) {
       for (let i = 0; i < canvas.width; i++) {
         it.buf[i] = sample(it);
