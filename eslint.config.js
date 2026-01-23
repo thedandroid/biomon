@@ -72,6 +72,8 @@ module.exports = [
         FileReader: "readonly",
         // Socket.io client
         io: "readonly",
+        // Toast notification system
+        toast: "readonly",
       },
     },
   },
@@ -103,6 +105,7 @@ module.exports = [
       "node_modules/",
       "coverage/",
       "*.min.js",
+      "public/toast.js", // Toast creates global, no-redeclare false positive
     ],
   },
 ];

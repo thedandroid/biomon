@@ -494,20 +494,23 @@ function updateSessionStatus(state) {
 }
 
 // New Session
-btnNewSession.addEventListener("click", () => {
-  if (!confirm("Clear current session and start fresh? This cannot be undone.")) {
-    return;
-  }
+btnNewSession.addEventListener("click", async () => {
+  const confirmed = await toast.confirm(
+    "Clear current session and start fresh? This cannot be undone.",
+    { title: "New Session", confirmText: "Clear Session" },
+  );
+  if (!confirmed) return;
+  
   socket.emit("session:clear");
   campaignNameInput.value = "";
-  alert("New session started.");
+  toast.success("New session started.");
 });
 
 // Save Campaign
 btnSaveCampaign.addEventListener("click", () => {
   const name = campaignNameInput.value.trim();
   if (!name) {
-    alert("Please enter a campaign name.");
+    toast.warning("Please enter a campaign name.");
     return;
   }
   
@@ -516,11 +519,11 @@ btnSaveCampaign.addEventListener("click", () => {
 
 socket.on("session:save:result", (result) => {
   if (result.success) {
-    alert(`Campaign saved: ${result.filename}`);
+    toast.success(`Campaign saved: ${result.filename}`);
     campaignNameInput.value = "";
     loadCampaignList();
   } else {
-    alert(`Failed to save campaign: ${result.error}`);
+    toast.error(`Failed to save campaign: ${result.error}`);
   }
 });
 
@@ -552,8 +555,12 @@ socket.on("session:list:result", (campaigns) => {
     item.appendChild(name);
     item.appendChild(meta);
     
-    item.addEventListener("click", () => {
-      if (confirm(`Load campaign "${camp.campaignName}"? Current session will be replaced.`)) {
+    item.addEventListener("click", async () => {
+      const confirmed = await toast.confirm(
+        `Load campaign "${camp.campaignName}"? Current session will be replaced.`,
+        { title: "Load Campaign", confirmText: "Load" },
+      );
+      if (confirmed) {
         socket.emit("session:load", { filename: camp.filename });
       }
     });
@@ -564,10 +571,10 @@ socket.on("session:list:result", (campaigns) => {
 
 socket.on("session:load:result", (result) => {
   if (result.success) {
-    alert("Campaign loaded successfully!");
+    toast.success("Campaign loaded successfully!");
     setSessionModalOpen(false);
   } else {
-    alert(`Failed to load campaign: ${result.error}`);
+    toast.error(`Failed to load campaign: ${result.error}`);
   }
 });
 
@@ -586,7 +593,7 @@ socket.on("session:export:result", (state) => {
   a.download = `biomon-backup-${timestamp}.json`;
   a.click();
   URL.revokeObjectURL(url);
-  alert("Backup exported!");
+  toast.success("Backup exported!");
 });
 
 // Import Backup
@@ -594,19 +601,23 @@ btnImport.addEventListener("click", () => {
   importFileInput.click();
 });
 
-importFileInput.addEventListener("change", (e) => {
+importFileInput.addEventListener("change", async (e) => {
   const file = e.target.files[0];
   if (!file) return;
   
   const reader = new FileReader();
-  reader.onload = (event) => {
+  reader.onload = async (event) => {
     try {
       const data = JSON.parse(event.target.result);
-      if (confirm("Import this backup? Current session will be replaced.")) {
+      const confirmed = await toast.confirm(
+        "Import this backup? Current session will be replaced.",
+        { title: "Import Backup", confirmText: "Import" },
+      );
+      if (confirmed) {
         socket.emit("session:import", data);
       }
     } catch (err) {
-      alert("Failed to parse backup file: " + err.message);
+      toast.error("Failed to parse backup file: " + err.message);
     }
   };
   reader.readAsText(file);
@@ -615,10 +626,10 @@ importFileInput.addEventListener("change", (e) => {
 
 socket.on("session:import:result", (result) => {
   if (result.success) {
-    alert("Backup imported successfully!");
+    toast.success("Backup imported successfully!");
     setSessionModalOpen(false);
   } else {
-    alert(`Failed to import backup: ${result.error}`);
+    toast.error(`Failed to import backup: ${result.error}`);
   }
 });
 
@@ -626,7 +637,7 @@ socket.on("session:import:result", (result) => {
 socket.on("session:autosave:info", (info) => {
   if (info.found && info.playerCount > 0) {
     const savedDate = new Date(info.timestamp).toLocaleString();
-    const msg = `Previous session found (${info.playerCount} players, saved ${savedDate}).\n\nSession has been automatically restored.`;
-    setTimeout(() => alert(msg), 500);
+    const msg = `Previous session found (${info.playerCount} players, saved ${savedDate}). Session has been automatically restored.`;
+    setTimeout(() => toast.info(msg, { title: "Session Restored", duration: 6000 }), 500);
   }
 });
