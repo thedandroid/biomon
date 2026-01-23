@@ -29,7 +29,126 @@ body {
     ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
     "Courier New", monospace;
   color: var(--ink);
+  position: relative;
+  overflow-x: hidden;
 }
+
+/* .bg styling merged below at line 153 */
+
+/* ===== CRT / RETRO TERMINAL EFFECTS ===== */
+
+/* Scanlines overlay - authentic CRT horizontal lines */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9998;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.25) 0px,
+    transparent 1px,
+    transparent 2px,
+    rgba(0, 0, 0, 0.25) 3px
+  );
+  animation: scanline-flicker 0.15s infinite;
+  opacity: 0.6;
+}
+
+@keyframes scanline-flicker {
+  0% { opacity: 0.55; }
+  50% { opacity: 0.65; }
+  100% { opacity: 0.55; }
+}
+
+/* Vignette effect - darker edges, brighter center (CRT phosphor falloff) */
+body::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9997;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 0%,
+    transparent 40%,
+    rgba(0, 0, 0, 0.3) 75%,
+    rgba(0, 0, 0, 0.7) 100%
+  );
+}
+
+/* Film grain / noise overlay */
+@keyframes noise-anim {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-5%, -5%); }
+  20% { transform: translate(-10%, 5%); }
+  30% { transform: translate(5%, -10%); }
+  40% { transform: translate(-5%, 15%); }
+  50% { transform: translate(-10%, 5%); }
+  60% { transform: translate(15%, 0); }
+  70% { transform: translate(0, 10%); }
+  80% { transform: translate(-15%, 0); }
+  90% { transform: translate(10%, 5%); }
+}
+
+.bg::before {
+  content: "";
+  position: fixed;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.06;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='3.5' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  animation: noise-anim 0.2s infinite;
+}
+
+/* Text glow effect - phosphor bloom on all text */
+.title,
+.kicker,
+.badge-v,
+.badge-k,
+.panel-title,
+.name,
+.gm-name,
+.ecg-label,
+.bar-label,
+.chip-kind,
+.tag,
+.alert-title,
+.alert-msg,
+.roller-entry-label,
+.legend-item,
+.mono {
+  text-shadow: 
+    0 0 4px currentColor,
+    0 0 8px rgba(185, 255, 245, 0.3);
+}
+
+/* Enhanced glow for critical elements */
+.title {
+  text-shadow: 
+    0 0 6px var(--ink),
+    0 0 12px rgba(185, 255, 245, 0.5),
+    0 0 18px rgba(185, 255, 245, 0.2);
+}
+
+/* Stronger glow on status badges */
+.badge-v.ok {
+  text-shadow: 
+    0 0 6px var(--ok),
+    0 0 10px rgba(108, 255, 184, 0.5);
+}
+
+/* ===== END CRT EFFECTS ===== */
 
 .bg {
   background:
@@ -44,6 +163,9 @@ body {
       transparent 55%
     ),
     linear-gradient(180deg, var(--bg1), var(--bg0));
+  
+  /* Very subtle curvature simulation with clip-path */
+  clip-path: ellipse(98% 98% at 50% 50%);
 }
 
 .shell {
