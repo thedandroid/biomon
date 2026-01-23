@@ -616,6 +616,7 @@ input[type="number"] {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
+  align-items: start;
 }
 @media (max-width: 980px) {
   .cards {
@@ -733,6 +734,7 @@ input[type="number"] {
   display: grid;
   gap: 10px;
   position: relative;
+  margin-bottom: 0;
 }
 .bar-label {
   display: flex;
@@ -816,7 +818,7 @@ input[type="number"] {
 
 /* ECG strip */
 .ecg-wrap {
-  margin-top: auto;
+  margin-top: 14px;
   border: 1px solid var(--line);
   border-radius: 10px;
   overflow: hidden;
@@ -1088,8 +1090,8 @@ canvas.ecg {
 }
 
 .tags {
-  margin-top: 10px;
-  margin-bottom: 12px;
+  margin-top: 6px;
+  margin-bottom: -4px;
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
