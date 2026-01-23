@@ -163,11 +163,11 @@ const ecgEngine = (() => {
     const g = rgbMatch ? rgbMatch[2] : "255";
     const b = rgbMatch ? rgbMatch[3] : "184";
 
-    // Pass 1: Phosphor glow (soft, blurred layer)
-    ctx.shadowBlur = 12;
-    ctx.shadowColor = `rgba(${r},${g},${b},0.8)`;
-    ctx.strokeStyle = `rgba(${r},${g},${b},0.5)`;
-    ctx.lineWidth = 3;
+    // Pass 1: Outer glow (widest, faintest)
+    ctx.shadowBlur = 20;
+    ctx.shadowColor = `rgba(${r},${g},${b},0.9)`;
+    ctx.strokeStyle = `rgba(${r},${g},${b},0.3)`;
+    ctx.lineWidth = 6;
 
     ctx.beginPath();
     for (let x = 0; x < W; x++) {
@@ -178,14 +178,35 @@ const ecgEngine = (() => {
       const distFromHead = (W + idx - it.x) % W;
       const fadeFactor = 1 - (distFromHead / W) * 0.5; // Fade from 1.0 to 0.5
       
-      ctx.globalAlpha = 0.6 * fadeFactor;
+      ctx.globalAlpha = 0.7 * fadeFactor;
       
       if (x === 0) ctx.moveTo(0, yy);
       else ctx.lineTo(x, yy);
     }
     ctx.stroke();
 
-    // Pass 2: Sharp main trace (crisp, bright line on top)
+    // Pass 2: Inner glow (tighter, brighter)
+    ctx.shadowBlur = 8;
+    ctx.shadowColor = `rgba(${r},${g},${b},1)`;
+    ctx.strokeStyle = `rgba(${r},${g},${b},0.8)`;
+    ctx.lineWidth = 3;
+
+    ctx.beginPath();
+    for (let x = 0; x < W; x++) {
+      const idx = (it.x + x) % W;
+      const yy = mid - it.buf[idx] * scale;
+      
+      const distFromHead = (W + idx - it.x) % W;
+      const fadeFactor = 1 - (distFromHead / W) * 0.5;
+      
+      ctx.globalAlpha = 0.9 * fadeFactor;
+      
+      if (x === 0) ctx.moveTo(0, yy);
+      else ctx.lineTo(x, yy);
+    }
+    ctx.stroke();
+
+    // Pass 3: Sharp main trace (crisp, bright line on top)
     ctx.shadowBlur = 0;
     ctx.shadowColor = "transparent";
     ctx.strokeStyle = baseColor;
@@ -200,7 +221,7 @@ const ecgEngine = (() => {
       const distFromHead = (W + idx - it.x) % W;
       const fadeFactor = 1 - (distFromHead / W) * 0.5;
       
-      ctx.globalAlpha = 0.95 * fadeFactor;
+      ctx.globalAlpha = 1.0 * fadeFactor;
       
       if (x === 0) ctx.moveTo(0, yy);
       else ctx.lineTo(x, yy);
