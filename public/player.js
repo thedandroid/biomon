@@ -41,6 +41,12 @@ const ecgEngine = (() => {
           event: null,
         },
       };
+      
+      // Pre-fill buffer with realistic samples to avoid startup artifacts
+      for (let i = 0; i < canvas.width; i++) {
+        it.buf[i] = sample(it);
+      }
+      
       items.set(id, it);
     }
     it.params = { ...it.params, ...params };
