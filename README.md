@@ -174,6 +174,16 @@ Each player card displays:
 
 ## Player View — What Players See
 
+The player view displays the full crew roster with real-time updates:
+
+### Crew Cards
+
+Each player card shows:
+- **Name** and **ID**
+- **Health**, **Stress**, and **Resolve** levels
+- **Active effects** (persistent conditions)
+- **Real-time ECG animation** reflecting their current state
+
 ### Visual Feedback
 
 - When a roll happens, the affected player's card shows a **brief alert banner** with the effect label
@@ -183,10 +193,11 @@ Each player card displays:
   - **Panic Roll** → Strong warning / large spike
   - If a persistent panic-tagged effect is active, the card keeps a visible panic indicator until cleared
 
-### Privacy
+### Read-Only Interface
 
-- Players see their own stats and effects
-- No access to GM controls or other players' hidden information
+- Players can see everyone's stats and conditions
+- No controls or editing capabilities (GM-only)
+- Perfect for display on a shared screen or individual devices
 
 ---
 
