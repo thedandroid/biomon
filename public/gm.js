@@ -465,11 +465,11 @@ const lastSavedTimeEl = document.getElementById("lastSavedTime");
 const importFileInput = document.getElementById("importFileInput");
 
 function setSessionModalOpen(open) {
+  if (!sessionModal) return;
+  sessionModal.classList.toggle("open", Boolean(open));
+  sessionModal.setAttribute("aria-hidden", open ? "false" : "true");
   if (open) {
-    sessionModal.removeAttribute("aria-hidden");
     loadCampaignList();
-  } else {
-    sessionModal.setAttribute("aria-hidden", "true");
   }
 }
 
