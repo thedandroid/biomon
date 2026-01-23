@@ -45,18 +45,31 @@ jobs:
         run: npm test
 
       - name: Build executable
-        run: npx pkg . --targets ${{ matrix.target }} --output dist/${{ matrix.artifact }}
+        run: node build.js && npx pkg dist/server.bundled.cjs --targets ${{ matrix.target }} --output dist/${{ matrix.artifact }}
+
+      - name: Package with public folder (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          cd dist
+          Compress-Archive -Path ${{ matrix.artifact }},public -DestinationPath ${{ matrix.artifact }}.zip
+        shell: powershell
+
+      - name: Package with public folder (Unix)
+        if: matrix.os != 'windows-latest'
+        run: |
+          cd dist
+          zip -r ${{ matrix.artifact }}.zip ${{ matrix.artifact }} public/
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
-          path: dist/${{ matrix.artifact }}
+          path: dist/${{ matrix.artifact }}.zip
 
       - name: Upload to release
         if: github.event_name == 'release'
         uses: softprops/action-gh-release@v1
         with:
-          files: dist/${{ matrix.artifact }}
+          files: dist/${{ matrix.artifact }}.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

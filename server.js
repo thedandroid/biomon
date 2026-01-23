@@ -28,24 +28,36 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// When running in pkg, use current working directory for data storage
+// In pkg, __dirname points inside the snapshot which is read-only
+const isPackaged = typeof process.pkg !== "undefined";
+const dataDir = isPackaged ? process.cwd() : __dirname;
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-app.use(express.static(path.join(__dirname, "public")));
+// Serve static files
+// For pkg builds, look for public/ directory next to the executable
+// This allows users to customize the UI if needed
+const publicDir = isPackaged 
+  ? path.join(path.dirname(process.execPath), "public")
+  : path.join(__dirname, "public");
+
+app.use(express.static(publicDir));
 
 app.get("/", (_req, res) =>
-  res.sendFile(path.join(__dirname, "public", "player.html")),
+  res.sendFile(path.join(publicDir, "player.html")),
 );
 app.get("/gm", (_req, res) =>
-  res.sendFile(path.join(__dirname, "public", "gm.html")),
+  res.sendFile(path.join(publicDir, "gm.html")),
 );
 
 // ============================================================
 // PERSISTENCE LAYER
 // ============================================================
 
-const SESSIONS_DIR = path.join(__dirname, "sessions");
+const SESSIONS_DIR = path.join(dataDir, "sessions");
 const AUTOSAVE_PATH = path.join(SESSIONS_DIR, "autosave.json");
 const AUTOSAVE_DEBOUNCE_MS = 1000; // Max once per second
 
