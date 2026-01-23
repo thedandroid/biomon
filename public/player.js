@@ -112,7 +112,8 @@ const ecgEngine = (() => {
 
     // Time progression (normalized)
     it.t += 1 / 60;
-    const p = (it.t * hz + it.phase) % 1; // 0..1
+    let p = (it.t * hz + it.phase) % 1; // 0..1
+    if (p < 0) p += 1; // Handle negative modulo for negative t values
 
     // Basic ECG shape: small P wave, sharp QRS, small T wave
     let y = 0;
