@@ -247,7 +247,7 @@ function rollerPanel(p) {
 
         <div class="roller-actions-area">
           <div class="roller-apply-slot"></div>
-          <button class="btn btn-ghost btn-sm" data-act="undo" ${lr.applied ? "" : "disabled"}>UNDO</button>
+          <button class="btn btn-ghost btn-sm" data-act="undo" ${lr.applied || lr.stressDeltaApplied ? "" : "disabled"}>UNDO</button>
         </div>
       `;
 
@@ -308,7 +308,8 @@ function rollerPanel(p) {
         });
         applySlot.appendChild(b);
       });
-    } else {
+    } else if (lr.tableEntryPersistent) {
+      // Only show APPLY button for persistent effects
       const b = document.createElement("button");
       b.className = "btn btn-primary btn-sm btn-glow";
       b.textContent = "APPLY EFFECT";
@@ -320,17 +321,26 @@ function rollerPanel(p) {
 
     // Add the stress adjustment button *after* the main apply button if relevant
     if (Number.isFinite(delta) && delta !== 0) {
-      const b = document.createElement("button");
-      b.className = "btn btn-ghost btn-sm";
-      b.title = "Adjust this crew member's stress (manual).";
-      b.innerHTML = `STRESS <span style="color:${delta > 0 ? "var(--warn)" : "var(--ok)"}">${delta > 0 ? "+" : ""}${delta}</span>`;
-      b.addEventListener("click", () => {
-        socket.emit("player:update", {
-          id: p.id,
-          stress: Number(p.stress || 0) + delta,
+      if (lr.stressDeltaApplied) {
+        // Show as applied
+        const b = document.createElement("button");
+        b.className = "btn btn-ghost btn-sm btn-disabled";
+        b.innerHTML = `<span class="check-icon">✓</span> STRESS ${delta > 0 ? "+" : ""}${delta}`;
+        applySlot.appendChild(b);
+      } else {
+        // Show as actionable
+        const b = document.createElement("button");
+        b.className = "btn btn-ghost btn-sm";
+        b.title = "Adjust this crew member's stress (manual).";
+        b.innerHTML = `STRESS <span style="color:${delta > 0 ? "var(--warn)" : "var(--ok)"}">${delta > 0 ? "+" : ""}${delta}</span>`;
+        b.addEventListener("click", () => {
+          socket.emit("roll:applyStressDelta", {
+            playerId: p.id,
+            eventId: lr.eventId,
+          });
         });
-      });
-      applySlot.appendChild(b); // Add to same slot
+        applySlot.appendChild(b);
+      }
     }
 
     out.querySelector("[data-act='undo']").addEventListener("click", () => {

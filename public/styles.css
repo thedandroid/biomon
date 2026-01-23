@@ -1602,12 +1602,11 @@ canvas.ecg {
   color: var(--ok);
   opacity: 1 !important;
   cursor: default;
-  padding-left: 0;
 }
 
 .check-icon {
   font-weight: bold;
-  margin-right: 4px;
+  margin-right: 6px;
 }
 
 /* Specific theme overrides */

@@ -472,6 +472,7 @@ io.on("connection", (socket) => {
       tableEntryLabel: entry.label,
       tableEntryDescription: entry.description,
       tableEntryStressDelta: stressDelta,
+      tableEntryPersistent: entry.persistent,
       duplicateAdjusted,
       duplicateFromId,
       duplicateFromLabel,
@@ -485,6 +486,8 @@ io.on("connection", (socket) => {
       applied: false,
       appliedEffectId: null,
       appliedStressDuplicate: false,
+      stressDeltaApplied: false,
+      stressDeltaAppliedValue: null,
     };
 
     pushRollEvent(rollEvent);
@@ -593,6 +596,47 @@ io.on("connection", (socket) => {
     broadcast();
   });
 
+  socket.on("roll:applyStressDelta", (payload) => {
+    const playerId = String(payload?.playerId ?? "");
+    const eventId = String(payload?.eventId ?? "");
+
+    const p = state.players.find((x) => x.id === playerId);
+    if (!p) return;
+    ensurePlayerFields(p);
+
+    const lr = p.lastRollEvent;
+    if (!lr || String(lr.eventId ?? "") !== eventId) return;
+    if (lr.stressDeltaApplied) return; // Already applied
+
+    const delta = Number(
+      lr.appliedTableEntryStressDelta !== null &&
+        lr.appliedTableEntryStressDelta !== undefined
+        ? lr.appliedTableEntryStressDelta
+        : lr.tableEntryStressDelta,
+    );
+
+    if (!Number.isFinite(delta) || delta === 0) return;
+
+    // Apply the stress change
+    const oldStress = p.stress;
+    p.stress = clampInt(
+      clampInt(p.stress ?? 0, 0, MAX_STRESS) + delta,
+      0,
+      MAX_STRESS,
+    );
+    lr.stressDeltaApplied = true;
+    lr.stressDeltaAppliedValue = delta; // Store what we applied for undo
+
+    console.log(
+      `[ROLL:APPLY-STRESS] ${p.name} stress ${oldStress} -> ${p.stress} (${delta > 0 ? "+" : ""}${delta})`,
+    );
+    addLogEntry(
+      "stress",
+      `${p.name} STRESS ADJUSTMENT: ${delta > 0 ? "+" : ""}${delta} (Total: ${p.stress})`,
+    );
+    broadcast();
+  });
+
   socket.on("roll:undo", (payload) => {
     const playerId = String(payload?.playerId ?? "");
     const eventId = String(payload?.eventId ?? "");
@@ -603,7 +647,7 @@ io.on("connection", (socket) => {
 
     const lr = p.lastRollEvent;
     if (!lr || String(lr.eventId ?? "") !== eventId) return;
-    if (!lr.applied) return;
+    if (!lr.applied && !lr.stressDeltaApplied) return; // Nothing to undo
 
     const hadEffect = Boolean(lr.appliedEffectId);
 
@@ -622,6 +666,19 @@ io.on("connection", (socket) => {
       );
       lr.appliedStressDuplicate = false;
       addLogEntry("info", `${p.name} UNDO: REVERTED +1 STRESS (Total: ${p.stress})`);
+    }
+
+    // If stress delta was applied, revert it
+    if (lr.stressDeltaApplied && lr.stressDeltaAppliedValue) {
+      const delta = lr.stressDeltaAppliedValue;
+      p.stress = clampInt(
+        clampInt(p.stress ?? 0, 0, MAX_STRESS) - delta,
+        0,
+        MAX_STRESS,
+      );
+      lr.stressDeltaApplied = false;
+      lr.stressDeltaAppliedValue = null;
+      addLogEntry("info", `${p.name} UNDO: REVERTED STRESS ${delta > 0 ? "+" : ""}${delta} (Total: ${p.stress})`);
     }
 
     lr.applied = false;
