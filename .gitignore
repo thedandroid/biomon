@@ -39,3 +39,7 @@ coverage/
 # Build outputs (future-proofing)
 dist/
 build/
+
+# Session data (campaigns and autosaves)
+sessions/
+!sessions/.gitkeep

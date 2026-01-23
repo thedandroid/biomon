@@ -445,4 +445,188 @@ clearPartyBtn.addEventListener("click", () => {
 socket.on("state", (s) => {
   lastState = s || { players: [] };
   render();
+  updateSessionStatus(s);
+});
+
+// ============================================================
+// SESSION MANAGEMENT
+// ============================================================
+
+const sessionModal = document.getElementById("sessionModal");
+const openSessionBtn = document.getElementById("openSession");
+const closeSessionBtn = document.getElementById("closeSession");
+const btnNewSession = document.getElementById("btnNewSession");
+const btnSaveCampaign = document.getElementById("btnSaveCampaign");
+const btnExport = document.getElementById("btnExport");
+const btnImport = document.getElementById("btnImport");
+const campaignNameInput = document.getElementById("campaignName");
+const campaignList = document.getElementById("campaignList");
+const lastSavedTimeEl = document.getElementById("lastSavedTime");
+const importFileInput = document.getElementById("importFileInput");
+
+function setSessionModalOpen(open) {
+  if (open) {
+    sessionModal.removeAttribute("aria-hidden");
+    loadCampaignList();
+  } else {
+    sessionModal.setAttribute("aria-hidden", "true");
+  }
+}
+
+openSessionBtn.addEventListener("click", () => setSessionModalOpen(true));
+closeSessionBtn.addEventListener("click", () => setSessionModalOpen(false));
+
+sessionModal.addEventListener("click", (e) => {
+  if (e.target.dataset.close) setSessionModalOpen(false);
+});
+
+function updateSessionStatus(state) {
+  if (state?.metadata?.lastSaved) {
+    const date = new Date(state.metadata.lastSaved);
+    lastSavedTimeEl.textContent = date.toLocaleString();
+  } else {
+    lastSavedTimeEl.textContent = "never";
+  }
+  
+  if (state?.metadata?.campaignName) {
+    campaignNameInput.placeholder = `Current: ${state.metadata.campaignName}`;
+  }
+}
+
+// New Session
+btnNewSession.addEventListener("click", () => {
+  if (!confirm("Clear current session and start fresh? This cannot be undone.")) {
+    return;
+  }
+  socket.emit("session:clear");
+  campaignNameInput.value = "";
+  alert("New session started.");
+});
+
+// Save Campaign
+btnSaveCampaign.addEventListener("click", () => {
+  const name = campaignNameInput.value.trim();
+  if (!name) {
+    alert("Please enter a campaign name.");
+    return;
+  }
+  
+  socket.emit("session:save", { campaignName: name });
+});
+
+socket.on("session:save:result", (result) => {
+  if (result.success) {
+    alert(`Campaign saved: ${result.filename}`);
+    campaignNameInput.value = "";
+    loadCampaignList();
+  } else {
+    alert(`Failed to save campaign: ${result.error}`);
+  }
+});
+
+// Load Campaign List
+function loadCampaignList() {
+  socket.emit("session:list");
+}
+
+socket.on("session:list:result", (campaigns) => {
+  if (!campaigns || campaigns.length === 0) {
+    campaignList.innerHTML = '<div class="hint" style="padding: 14px">No saved campaigns found.</div>';
+    return;
+  }
+  
+  campaignList.innerHTML = "";
+  for (const camp of campaigns) {
+    const item = document.createElement("div");
+    item.className = "campaign-item";
+    
+    const name = document.createElement("div");
+    name.className = "campaign-name";
+    name.textContent = camp.campaignName;
+    
+    const meta = document.createElement("div");
+    meta.className = "campaign-meta";
+    const savedDate = new Date(camp.lastSaved).toLocaleString();
+    meta.textContent = `${camp.playerCount} players • Session ${camp.sessionCount} • ${savedDate}`;
+    
+    item.appendChild(name);
+    item.appendChild(meta);
+    
+    item.addEventListener("click", () => {
+      if (confirm(`Load campaign "${camp.campaignName}"? Current session will be replaced.`)) {
+        socket.emit("session:load", { filename: camp.filename });
+      }
+    });
+    
+    campaignList.appendChild(item);
+  }
+});
+
+socket.on("session:load:result", (result) => {
+  if (result.success) {
+    alert("Campaign loaded successfully!");
+    setSessionModalOpen(false);
+  } else {
+    alert(`Failed to load campaign: ${result.error}`);
+  }
+});
+
+// Export Backup
+btnExport.addEventListener("click", () => {
+  socket.emit("session:export");
+});
+
+socket.on("session:export:result", (state) => {
+  const json = JSON.stringify(state, null, 2);
+  const blob = new Blob([json], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+  a.download = `biomon-backup-${timestamp}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  alert("Backup exported!");
+});
+
+// Import Backup
+btnImport.addEventListener("click", () => {
+  importFileInput.click();
+});
+
+importFileInput.addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    try {
+      const data = JSON.parse(event.target.result);
+      if (confirm("Import this backup? Current session will be replaced.")) {
+        socket.emit("session:import", data);
+      }
+    } catch (err) {
+      alert("Failed to parse backup file: " + err.message);
+    }
+  };
+  reader.readAsText(file);
+  importFileInput.value = ""; // Reset for next use
+});
+
+socket.on("session:import:result", (result) => {
+  if (result.success) {
+    alert("Backup imported successfully!");
+    setSessionModalOpen(false);
+  } else {
+    alert(`Failed to import backup: ${result.error}`);
+  }
+});
+
+// Auto-save recovery prompt
+socket.on("session:autosave:info", (info) => {
+  if (info.found && info.playerCount > 0) {
+    const savedDate = new Date(info.timestamp).toLocaleString();
+    const msg = `Previous session found (${info.playerCount} players, saved ${savedDate}).\n\nSession has been automatically restored.`;
+    setTimeout(() => alert(msg), 500);
+  }
 });

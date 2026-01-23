@@ -64,6 +64,12 @@ module.exports = [
         requestAnimationFrame: "readonly",
         cancelAnimationFrame: "readonly",
         getComputedStyle: "readonly",
+        alert: "readonly",
+        confirm: "readonly",
+        prompt: "readonly",
+        Blob: "readonly",
+        URL: "readonly",
+        FileReader: "readonly",
         // Socket.io client
         io: "readonly",
       },

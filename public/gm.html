@@ -15,6 +15,13 @@
         </div>
         <div class="top-actions">
           <button
+            id="openSession"
+            class="btn btn-ghost"
+            title="Manage sessions"
+          >
+            SESSION
+          </button>
+          <button
             id="openAdd"
             class="btn btn-primary"
             title="Add a crew member"
@@ -144,6 +151,68 @@
           </form>
         </div>
       </div>
+
+      <!-- Session Management Modal -->
+      <div id="sessionModal" class="modal" aria-hidden="true">
+        <div class="modal-backdrop" data-close="1"></div>
+        <div
+          class="modal-dialog"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Session Management"
+        >
+          <div class="modal-hd">
+            <div>
+              <div class="kicker">WEYLAND-YUTANI MEDICAL SYSTEMS</div>
+              <h2 class="panel-title" style="margin: 6px 0 0">
+                SESSION MANAGEMENT
+              </h2>
+            </div>
+            <button id="closeSession" class="btn btn-ghost" title="Close">
+              CLOSE
+            </button>
+          </div>
+
+          <div class="form" style="margin-top: 14px">
+            <div class="panel-sub" id="sessionStatus" style="margin-bottom: 14px">
+              Auto-save active. Last saved: <span id="lastSavedTime">never</span>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-bottom: 20px">
+              <button id="btnNewSession" class="btn btn-ghost" style="flex: 1">
+                NEW SESSION
+              </button>
+              <button id="btnExport" class="btn btn-ghost" style="flex: 1">
+                EXPORT BACKUP
+              </button>
+              <button id="btnImport" class="btn btn-ghost" style="flex: 1">
+                IMPORT BACKUP
+              </button>
+            </div>
+
+            <label class="lbl">SAVE CAMPAIGN</label>
+            <div style="display: flex; gap: 10px; margin-bottom: 20px">
+              <input
+                id="campaignName"
+                class="inp"
+                placeholder="e.g., Chariot of the Gods"
+                style="flex: 1"
+              />
+              <button id="btnSaveCampaign" class="btn btn-primary">
+                SAVE
+              </button>
+            </div>
+
+            <label class="lbl">LOAD CAMPAIGN</label>
+            <div id="campaignList" class="campaign-list">
+              <div class="hint">No saved campaigns found.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hidden file input for import -->
+      <input type="file" id="importFileInput" accept=".json" style="display: none" />
     </div>
 
     <script src="/socket.io/socket.io.js"></script>

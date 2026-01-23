@@ -727,3 +727,36 @@ canvas.ecg {
   border-color: rgba(255, 204, 102, 0.35);
   color: rgba(255, 204, 102, 0.95);
 }
+
+
+/* Campaign list */
+.campaign-list {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(4, 10, 12, 0.4);
+}
+.campaign-item {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.campaign-item:last-child {
+  border-bottom: none;
+}
+.campaign-item:hover {
+  background: rgba(4, 10, 12, 0.8);
+}
+.campaign-name {
+  font-size: 14px;
+  color: var(--ink2);
+  letter-spacing: 0.1em;
+  margin-bottom: 4px;
+}
+.campaign-meta {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+}
