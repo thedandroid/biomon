@@ -51,13 +51,9 @@ const ecgEngine = (() => {
       // Add to map so sample() can find it
       items.set(id, it);
       
-      // Pre-fill buffer simulating historical samples
-      // Start from "past" and let sample() naturally increment t
-      it.t = -(canvas.width / 60); // Start ~8.7 seconds in the past
-      for (let i = 0; i < canvas.width; i++) {
-        it.buf[i] = sample(it); // sample() will increment it.t by 1/60
-      }
-      // After loop, it.t is back near 0 and ready to continue
+      // DON'T pre-fill - let it fill naturally from tick()
+      // Buffer starts with zeros, which will show as flatline initially
+      // After ~8.67 seconds (520 frames), buffer will be fully populated
     } else {
       if (it.canvas !== canvas) {
         // Canvas was recreated (DOM refresh) - update references but keep buffer
@@ -115,34 +111,50 @@ const ecgEngine = (() => {
     let p = (it.t * hz + it.phase) % 1; // 0..1
     if (p < 0) p += 1; // Handle negative modulo for negative t values
 
-    // Basic ECG shape: small P wave, sharp QRS, small T wave
+    // Smoother ECG shape using sine waves instead of sharp transitions
     let y = 0;
-    // P wave
+    
+    // P wave (small bump)
     if (p > 0.08 && p < 0.16) {
       const u = (p - 0.08) / 0.08;
       y += 0.18 * Math.sin(u * Math.PI);
     }
-    // QRS complex
-    if (p > 0.22 && p < 0.26) {
-      const u = (p - 0.22) / 0.04;
-      // quick down-up-down
-      y += u < 0.33 ? -0.35 : u < 0.66 ? 1.25 : -0.55;
+    
+    // QRS complex - SMOOTHED with sine waves instead of sharp steps
+    if (p > 0.20 && p < 0.28) {
+      const u = (p - 0.20) / 0.08;
+      // Smooth approximation of QRS: small dip, tall spike, small dip
+      if (u < 0.25) {
+        // Q wave (small dip)
+        y += -0.2 * Math.sin(u * 4 * Math.PI);
+      } else if (u < 0.75) {
+        // R wave (tall spike)
+        const ru = (u - 0.25) / 0.5;
+        y += 0.9 * Math.sin(ru * Math.PI);
+      } else {
+        // S wave (small dip)
+        const su = (u - 0.75) / 0.25;
+        y += -0.15 * Math.sin(su * Math.PI);
+      }
     }
-    // T wave
+    
+    // T wave (medium bump)
     if (p > 0.34 && p < 0.5) {
       const u = (p - 0.34) / 0.16;
       y += 0.3 * Math.sin(u * Math.PI);
     }
 
-    // Baseline drift + noise (stress adds jitter)
+    // Baseline drift (very gentle)
     const drift = Math.sin((it.t * 0.35 + it.phase) * Math.PI * 2) * 0.06;
-    const jitter =
-      (Math.random() - 0.5) * (noise + evIntensity * (evPanic ? 0.3 : 0.12));
+    
+    // Only add jitter if stressed or event active
+    const jitter = (stress > 0 || evActive)
+      ? (Math.random() - 0.5) * (noise + evIntensity * (evPanic ? 0.3 : 0.12))
+      : 0;
 
-    // Additional event spikes for panic
+    // Additional event spikes for panic (only if event active)
     let spike = 0;
     if (evActive) {
-      // occasional tall spike; more likely + taller for panic
       const chance = evPanic ? 0.09 : 0.04;
       if (Math.random() < chance) spike = (evPanic ? 1.9 : 0.9) * evIntensity;
     }
@@ -156,9 +168,13 @@ const ecgEngine = (() => {
     const W = c.width,
       H = c.height;
 
-    // Background
-    ctx.clearRect(0, 0, W, H);
+    const mid = Math.floor(H * 0.55);
+    const scale = H * 0.32;
 
+    // Simple scrolling approach: only draw up to current position
+    // Clear the entire canvas first
+    ctx.clearRect(0, 0, W, H);
+    
     // faint grid
     ctx.globalAlpha = 0.25;
     ctx.strokeStyle = "rgba(15,42,39,1)";
@@ -176,80 +192,22 @@ const ecgEngine = (() => {
     }
     ctx.stroke();
 
-    const mid = Math.floor(H * 0.55);
-    const scale = H * 0.32;
-
-    // Draw waveform with phosphor glow and trailing fade
+    // Simple single-pass rendering
     const baseColor = it.params.ecgColor || "rgba(108,255,184,1)";
     
-    // Extract RGB from rgba string for glow
-    const rgbMatch = baseColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-    const r = rgbMatch ? rgbMatch[1] : "108";
-    const g = rgbMatch ? rgbMatch[2] : "255";
-    const b = rgbMatch ? rgbMatch[3] : "184";
-
-    // Pass 1: Outer glow (widest, faintest)
-    ctx.shadowBlur = 20;
-    ctx.shadowColor = `rgba(${r},${g},${b},0.9)`;
-    ctx.strokeStyle = `rgba(${r},${g},${b},0.3)`;
-    ctx.lineWidth = 6;
-
-    ctx.beginPath();
-    for (let x = 0; x < W; x++) {
-      const idx = (it.x + x) % W;
-      const yy = mid - it.buf[idx] * scale;
-      
-      // Trailing fade: older samples fade out
-      const distFromHead = (W + idx - it.x) % W;
-      const fadeFactor = 1 - (distFromHead / W) * 0.5; // Fade from 1.0 to 0.5
-      
-      ctx.globalAlpha = 0.7 * fadeFactor;
-      
-      if (x === 0) ctx.moveTo(0, yy);
-      else ctx.lineTo(x, yy);
-    }
-    ctx.stroke();
-
-    // Pass 2: Inner glow (tighter, brighter)
-    ctx.shadowBlur = 8;
-    ctx.shadowColor = `rgba(${r},${g},${b},1)`;
-    ctx.strokeStyle = `rgba(${r},${g},${b},0.8)`;
-    ctx.lineWidth = 3;
-
-    ctx.beginPath();
-    for (let x = 0; x < W; x++) {
-      const idx = (it.x + x) % W;
-      const yy = mid - it.buf[idx] * scale;
-      
-      const distFromHead = (W + idx - it.x) % W;
-      const fadeFactor = 1 - (distFromHead / W) * 0.5;
-      
-      ctx.globalAlpha = 0.9 * fadeFactor;
-      
-      if (x === 0) ctx.moveTo(0, yy);
-      else ctx.lineTo(x, yy);
-    }
-    ctx.stroke();
-
-    // Pass 3: Sharp main trace (crisp, bright line on top)
-    ctx.shadowBlur = 0;
-    ctx.shadowColor = "transparent";
     ctx.strokeStyle = baseColor;
     ctx.lineWidth = 2;
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
 
+    // Draw the waveform in chronological order (oldest to newest)
     ctx.beginPath();
-    for (let x = 0; x < W; x++) {
-      const idx = (it.x + x) % W;
+    for (let i = 0; i < W; i++) {
+      const idx = (it.x + i) % W;
       const yy = mid - it.buf[idx] * scale;
       
-      // Same trailing fade for consistency
-      const distFromHead = (W + idx - it.x) % W;
-      const fadeFactor = 1 - (distFromHead / W) * 0.5;
-      
-      ctx.globalAlpha = 1.0 * fadeFactor;
-      
-      if (x === 0) ctx.moveTo(0, yy);
-      else ctx.lineTo(x, yy);
+      if (i === 0) ctx.moveTo(i, yy);
+      else ctx.lineTo(i, yy);
     }
     ctx.stroke();
 
