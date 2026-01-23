@@ -2,6 +2,7 @@
   "name": "biomon",
   "version": "1.0.0",
   "description": "BIOMON - Alien RPG Crew Vitals & Stress Monitor",
+  "type": "module",
   "main": "server.js",
   "bin": "server.js",
   "scripts": {

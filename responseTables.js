@@ -270,7 +270,7 @@ function getEntryById(rollType, entryId) {
   return table.find((e) => e.id === id) || null;
 }
 
-module.exports = {
+export {
   STRESS_TABLE,
   PANIC_TABLE,
   resolveEntry,

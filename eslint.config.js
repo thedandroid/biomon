@@ -1,12 +1,12 @@
 // ESLint flat config for ESLint v9+
-const js = require("@eslint/js");
+import js from "@eslint/js";
 
-module.exports = [
+export default [
   js.configs.recommended,
   {
     languageOptions: {
       ecmaVersion: "latest",
-      sourceType: "commonjs",
+      sourceType: "module",
       globals: {
         // Node.js globals
         __dirname: "readonly",

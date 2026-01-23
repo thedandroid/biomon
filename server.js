@@ -4,13 +4,14 @@
 // Start: node server.js
 // GM:     http://localhost:3050/gm
 // Players:http://localhost:3050/
-const path = require("path");
-const fs = require("fs");
-const express = require("express");
-const http = require("http");
-const { Server } = require("socket.io");
-const { resolveEntry, getEntryById } = require("./responseTables");
-const {
+import path from "path";
+import { fileURLToPath } from "url";
+import fs from "fs";
+import express from "express";
+import http from "http";
+import { Server } from "socket.io";
+import { resolveEntry, getEntryById } from "./responseTables.js";
+import {
   clamp,
   clampInt,
   newId,
@@ -22,7 +23,10 @@ const {
   MAX_STRESS,
   MAX_RESOLVE,
   ROLL_FEED_CAP,
-} = require("./utils");
+} from "./utils.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const server = http.createServer(app);

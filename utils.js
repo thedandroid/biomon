@@ -79,7 +79,7 @@ function d6() {
   return Math.floor(Math.random() * 6) + 1;
 }
 
-module.exports = {
+export {
   // Constants
   DEFAULT_MAX_HEALTH,
   MAX_HEALTH_CAP,
