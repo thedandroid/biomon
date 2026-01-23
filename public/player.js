@@ -24,7 +24,10 @@ const ecgEngine = (() => {
 
   function upsert(id, canvas, params) {
     let it = items.get(id);
-    if (!it || it.canvas !== canvas) {
+    const needsInit = !it;
+    
+    if (needsInit) {
+      // First time seeing this player ID - create new state
       const ctx = canvas.getContext("2d");
       it = {
         canvas,
@@ -41,15 +44,22 @@ const ecgEngine = (() => {
           event: null,
         },
       };
-      
-      // Pre-fill buffer with realistic samples to avoid startup artifacts
+      items.set(id, it);
+    } else if (it.canvas !== canvas) {
+      // Canvas was recreated (DOM refresh) - update references but keep buffer
+      it.canvas = canvas;
+      it.ctx = canvas.getContext("2d");
+    }
+    
+    // Always update params
+    it.params = { ...it.params, ...params };
+    
+    // Pre-fill buffer only on first init, using the actual params
+    if (needsInit) {
       for (let i = 0; i < canvas.width; i++) {
         it.buf[i] = sample(it);
       }
-      
-      items.set(id, it);
     }
-    it.params = { ...it.params, ...params };
 
     if (!raf) raf = requestAnimationFrame(tick);
   }
