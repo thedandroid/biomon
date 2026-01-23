@@ -151,24 +151,64 @@ const ecgEngine = (() => {
     }
     ctx.stroke();
 
-    // waveform
-    ctx.globalAlpha = 0.95;
-    ctx.strokeStyle = it.params.ecgColor || "rgba(108,255,184,1)";
-    ctx.lineWidth = 2;
-
     const mid = Math.floor(H * 0.55);
     const scale = H * 0.32;
+
+    // Draw waveform with phosphor glow and trailing fade
+    const baseColor = it.params.ecgColor || "rgba(108,255,184,1)";
+    
+    // Extract RGB from rgba string for glow
+    const rgbMatch = baseColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+    const r = rgbMatch ? rgbMatch[1] : "108";
+    const g = rgbMatch ? rgbMatch[2] : "255";
+    const b = rgbMatch ? rgbMatch[3] : "184";
+
+    // Pass 1: Phosphor glow (soft, blurred layer)
+    ctx.shadowBlur = 12;
+    ctx.shadowColor = `rgba(${r},${g},${b},0.8)`;
+    ctx.strokeStyle = `rgba(${r},${g},${b},0.5)`;
+    ctx.lineWidth = 3;
 
     ctx.beginPath();
     for (let x = 0; x < W; x++) {
       const idx = (it.x + x) % W;
       const yy = mid - it.buf[idx] * scale;
+      
+      // Trailing fade: older samples fade out
+      const distFromHead = (W + idx - it.x) % W;
+      const fadeFactor = 1 - (distFromHead / W) * 0.5; // Fade from 1.0 to 0.5
+      
+      ctx.globalAlpha = 0.6 * fadeFactor;
+      
+      if (x === 0) ctx.moveTo(0, yy);
+      else ctx.lineTo(x, yy);
+    }
+    ctx.stroke();
+
+    // Pass 2: Sharp main trace (crisp, bright line on top)
+    ctx.shadowBlur = 0;
+    ctx.shadowColor = "transparent";
+    ctx.strokeStyle = baseColor;
+    ctx.lineWidth = 2;
+
+    ctx.beginPath();
+    for (let x = 0; x < W; x++) {
+      const idx = (it.x + x) % W;
+      const yy = mid - it.buf[idx] * scale;
+      
+      // Same trailing fade for consistency
+      const distFromHead = (W + idx - it.x) % W;
+      const fadeFactor = 1 - (distFromHead / W) * 0.5;
+      
+      ctx.globalAlpha = 0.95 * fadeFactor;
+      
       if (x === 0) ctx.moveTo(0, yy);
       else ctx.lineTo(x, yy);
     }
     ctx.stroke();
 
     // scanline sheen
+    ctx.shadowBlur = 0;
     ctx.globalAlpha = 0.12;
     ctx.fillStyle = "rgba(185,255,245,1)";
     for (let y = 0; y < H; y += 3) ctx.fillRect(0, y, W, 1);
