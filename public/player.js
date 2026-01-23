@@ -32,7 +32,7 @@ const ecgEngine = (() => {
       it = {
         canvas,
         ctx,
-        buf: new Float32Array(canvas.width),
+        buf: new Float32Array(canvas.width).fill(0), // Start with zeros
         x: 0,
         phase: Math.random() * 10,
         t: 0,
@@ -44,21 +44,29 @@ const ecgEngine = (() => {
           event: null,
         },
       };
+      
+      // Update params BEFORE adding to items and BEFORE pre-filling
+      it.params = { ...it.params, ...params };
+      
+      // Add to map so sample() can find it
       items.set(id, it);
-    } else if (it.canvas !== canvas) {
-      // Canvas was recreated (DOM refresh) - update references but keep buffer
-      it.canvas = canvas;
-      it.ctx = canvas.getContext("2d");
-    }
-    
-    // Always update params FIRST
-    it.params = { ...it.params, ...params };
-    
-    // Pre-fill buffer only on first init, AFTER params are set
-    if (needsInit) {
+      
+      // Pre-fill buffer simulating historical samples
+      // Start from "past" and let sample() naturally increment t
+      it.t = -(canvas.width / 60); // Start ~8.7 seconds in the past
       for (let i = 0; i < canvas.width; i++) {
-        it.buf[i] = sample(it);
+        it.buf[i] = sample(it); // sample() will increment it.t by 1/60
       }
+      // After loop, it.t is back near 0 and ready to continue
+    } else {
+      if (it.canvas !== canvas) {
+        // Canvas was recreated (DOM refresh) - update references but keep buffer
+        it.canvas = canvas;
+        it.ctx = canvas.getContext("2d");
+      }
+      
+      // Update params for existing item
+      it.params = { ...it.params, ...params };
     }
 
     if (!raf) raf = requestAnimationFrame(tick);
