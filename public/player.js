@@ -6,6 +6,7 @@ const crewCountEl = document.getElementById("crewCount");
 const partyStressEl = document.getElementById("partyStress");
 
 let state = { players: [] };
+const previousPlayerStates = new Map(); // Track previous player values for animations
 
 // Local-only alert tracking: show a banner briefly when a new roll event arrives
 const alertState = {
@@ -474,9 +475,42 @@ function render() {
 
     const rollFlash = computeRollFlash(p);
     const panicPersist = hasActivePanicEffect(p);
+    const isBroken = p.health <= 0;
 
     const card = document.createElement("div");
-    card.className = `card${panicPersist ? " card-panic" : ""}`;
+    let cardClasses = "card";
+    if (panicPersist) cardClasses += " card-panic";
+    if (isBroken) cardClasses += " card-broken";
+    card.className = cardClasses;
+    card.dataset.playerId = p.id;
+
+    // Detect changes for animations
+    const prev = previousPlayerStates.get(p.id);
+    if (prev) {
+      const healthChanged = prev.health !== p.health;
+      const panicChanged = (prev.activeEffects?.length ?? 0) < (p.activeEffects?.length ?? 0);
+      
+      // Only animate on significant events
+      if (panicChanged) {
+        // New panic effect - critical flash
+        card.classList.add("flash-critical");
+      } else if (healthChanged && p.health <= 2 && prev.health > 2) {
+        // Health just dropped to critical - warning flash
+        card.classList.add("flash-warning");
+      }
+      
+      // Remove animation class after animation completes
+      setTimeout(() => {
+        card.classList.remove("flash-warning", "flash-critical");
+      }, 600);
+    }
+    
+    // Store current state for next comparison
+    previousPlayerStates.set(p.id, {
+      health: p.health,
+      stress: p.stress,
+      activeEffects: p.activeEffects ? [...p.activeEffects] : [],
+    });
 
     const hd = document.createElement("div");
     hd.className = "card-hd";
@@ -537,9 +571,21 @@ function render() {
 
     // Effect tags (no rules text)
     const live = activeEffects(p);
-    if (live.length) {
+    
+    // Add BROKEN tag if health is 0
+    if (isBroken || live.length) {
       const tags = document.createElement("div");
       tags.className = "tags";
+      
+      // BROKEN status has priority
+      if (isBroken) {
+        const tag = document.createElement("div");
+        tag.className = "tag tag-broken";
+        tag.textContent = "BROKEN";
+        tags.appendChild(tag);
+      }
+      
+      // Show other active effects
       for (const e of live) {
         const tag = document.createElement("div");
         const isPanic = String(e.type || "").startsWith("panic_");

@@ -178,11 +178,17 @@ body {
   padding: 10px 10px;
   border-radius: 8px;
   outline: none;
+  transition: all 0.2s ease-out;
+}
+
+.inp:hover {
+  border-color: rgba(108, 255, 184, 0.3);
 }
 
 .inp:focus {
   border-color: rgba(108, 255, 184, 0.65);
   box-shadow: 0 0 0 3px rgba(108, 255, 184, 0.12);
+  background: rgba(4, 10, 12, 0.9);
 }
 
 .row {
@@ -210,10 +216,51 @@ body {
   border-radius: 10px;
   letter-spacing: 0.12em;
   cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s ease-out;
+}
+
+.btn::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(185, 255, 245, 0.2);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.btn:active::before {
+  width: 300px;
+  height: 300px;
 }
 
 .btn:hover {
   border-color: rgba(108, 255, 184, 0.55);
+  background: rgba(7, 18, 20, 0.8);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.btn:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.btn:disabled:hover {
+  border-color: var(--line);
+  background: rgba(7, 18, 20, 0.65);
+  box-shadow: none;
 }
 
 .btn-primary {
@@ -221,8 +268,18 @@ body {
   border-color: rgba(108, 255, 184, 0.35);
 }
 
+.btn-primary:hover {
+  background: rgba(108, 255, 184, 0.18);
+  border-color: rgba(108, 255, 184, 0.6);
+  box-shadow: 0 0 12px rgba(108, 255, 184, 0.2);
+}
+
 .btn-ghost {
   background: rgba(7, 18, 20, 0.25);
+}
+
+.btn-ghost:hover {
+  background: rgba(7, 18, 20, 0.45);
 }
 
 .gm-list {
@@ -245,6 +302,13 @@ body {
   background: var(--panel2);
   border-radius: 10px;
   padding: 12px;
+  transition: all 0.2s ease-out;
+}
+
+.gm-card:hover {
+  box-shadow: 
+    var(--shadow),
+    0 0 20px rgba(185, 255, 245, 0.05);
 }
 
 /* Modal (GM Add Crew) */
@@ -253,16 +317,25 @@ body {
   inset: 0;
   display: none;
   z-index: 50;
+  opacity: 0;
+  transition: opacity 0.2s ease-out;
 }
 
 .modal.open {
   display: block;
+  opacity: 1;
+}
+
+.modal.closing {
+  opacity: 0;
 }
 
 .modal-backdrop {
   position: absolute;
   inset: 0;
   background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
 .modal-dialog {
@@ -274,6 +347,19 @@ body {
   box-shadow: var(--shadow);
   border-radius: 12px;
   padding: 16px;
+  transform: scale(0.95) translateY(-20px);
+  transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+  opacity: 0;
+}
+
+.modal.open .modal-dialog {
+  transform: scale(1) translateY(0);
+  opacity: 1;
+}
+
+.modal.closing .modal-dialog {
+  transform: scale(0.95) translateY(-20px);
+  opacity: 0;
 }
 .modal-hd {
   display: flex;
@@ -357,6 +443,14 @@ input[type="range"] {
   padding: 14px;
   position: relative;
   overflow: hidden;
+  /* No transition by default - prevents animations on DOM recreation */
+  transition: box-shadow 0.2s ease-out;
+}
+
+.card:hover {
+  box-shadow: 
+    var(--shadow),
+    0 0 20px rgba(185, 255, 245, 0.05);
 }
 .card-panic {
   border-color: rgba(255, 59, 212, 0.35);
@@ -593,6 +687,18 @@ canvas.ecg {
   border-radius: 10px;
   padding: 10px;
   background: rgba(4, 10, 12, 0.45);
+  /* Removed auto-animation to prevent triggering on every render */
+}
+
+@keyframes roller-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 .roller-out-stress {
   box-shadow: 0 0 0 1px rgba(255, 204, 102, 0.1) inset;
@@ -689,9 +795,27 @@ canvas.ecg {
   display: flex;
   justify-content: space-between;
   gap: 10px;
+  /* Removed auto-animation to prevent triggering on every render */
 }
+
+@keyframes alert-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .alert-stress {
   box-shadow: 0 0 0 1px rgba(255, 204, 102, 0.15) inset;
+}
+
+.alert-panic {
+  box-shadow: 0 0 0 1px rgba(255, 59, 212, 0.2) inset;
+  border-color: rgba(255, 59, 212, 0.3);
 }
 .alert-title {
   letter-spacing: 0.14em;
@@ -718,6 +842,18 @@ canvas.ecg {
   letter-spacing: 0.1em;
   color: var(--ink2);
   background: rgba(4, 10, 12, 0.55);
+  /* Removed auto-animation to prevent triggering on every render */
+}
+
+@keyframes tag-fade-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 .tag-panic {
   border-color: rgba(255, 59, 212, 0.35);
@@ -726,6 +862,12 @@ canvas.ecg {
 .tag-stress {
   border-color: rgba(255, 204, 102, 0.35);
   color: rgba(255, 204, 102, 0.95);
+}
+.tag-broken {
+  border-color: rgba(255, 59, 59, 0.6);
+  color: rgba(255, 59, 59, 1);
+  font-weight: 600;
+  background: rgba(255, 59, 59, 0.1);
 }
 
 
@@ -741,13 +883,16 @@ canvas.ecg {
   padding: 12px 14px;
   border-bottom: 1px solid var(--line);
   cursor: pointer;
-  transition: background 0.15s;
+  transition: all 0.2s ease-out;
 }
 .campaign-item:last-child {
   border-bottom: none;
 }
 .campaign-item:hover {
   background: rgba(4, 10, 12, 0.8);
+  border-color: rgba(108, 255, 184, 0.2);
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 .campaign-name {
   font-size: 14px;
@@ -795,7 +940,8 @@ canvas.ecg {
 }
 
 .toast.toast-exit {
-  animation: toast-slide-out 0.25s cubic-bezier(0.4, 0, 1, 1);
+  animation: toast-slide-out 0.25s cubic-bezier(0.4, 0, 1, 1) forwards;
+  transition: none; /* Disable transitions during exit to prevent jitter */
 }
 
 .toast-header {
@@ -891,5 +1037,145 @@ canvas.ecg {
   to {
     opacity: 0;
     transform: translateX(100%);
+  }
+}
+
+/* Loading Spinner */
+.spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(185, 255, 245, 0.2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spinner-rotate 0.6s linear infinite;
+}
+
+.spinner-lg {
+  width: 40px;
+  height: 40px;
+  border-width: 3px;
+}
+
+@keyframes spinner-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Loading states */
+.loading-overlay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  color: var(--text-dim);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+}
+
+.loading-text {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Player Card Animations */
+@keyframes pulse-glow {
+  0% {
+    box-shadow: 
+      0 0 0 0 var(--accent),
+      var(--shadow);
+  }
+  50% {
+    box-shadow: 
+      0 0 20px 2px var(--accent),
+      var(--shadow);
+  }
+  100% {
+    box-shadow: 
+      0 0 0 0 var(--accent),
+      var(--shadow);
+  }
+}
+
+@keyframes flash-warning {
+  0%, 100% {
+    border-color: var(--line);
+    box-shadow: 0 0 0 0 rgba(255, 204, 102, 0);
+  }
+  50% {
+    border-color: rgba(255, 204, 102, 0.9);
+    box-shadow: 
+      0 0 30px 5px rgba(255, 204, 102, 0.6),
+      0 0 60px 12px rgba(255, 204, 102, 0.3) inset;
+  }
+}
+
+@keyframes flash-critical {
+  0%, 100% {
+    border-color: var(--line);
+    box-shadow: 0 0 0 0 rgba(255, 107, 107, 0);
+  }
+  50% {
+    border-color: rgba(255, 107, 107, 0.9);
+    box-shadow: 
+      0 0 30px 5px rgba(255, 107, 107, 0.6),
+      0 0 60px 12px rgba(255, 107, 107, 0.3) inset;
+  }
+}
+
+/* Player card animations */
+.card.pulse {
+  animation: pulse-glow 0.6s ease-out !important;
+  transition: none !important; /* Disable transition during animation */
+}
+
+.card.flash-warning {
+  animation: flash-warning 0.4s ease-out !important;
+  transition: none !important; /* Disable transition during animation */
+}
+
+.card.flash-critical {
+  animation: flash-critical 0.4s ease-out !important;
+  transition: none !important; /* Disable transition during animation */
+}
+
+/* Broken state (0 health) */
+.card-broken {
+  border-color: rgba(255, 59, 59, 0.8) !important;
+  box-shadow: 
+    0 0 20px rgba(255, 59, 59, 0.4),
+    0 0 40px rgba(255, 59, 59, 0.2) inset;
+}
+
+/* Smooth value transitions */
+.slider-value,
+.val-display {
+  transition: transform 0.2s ease-out;
+}
+
+.slider-value.bump,
+.val-display.bump {
+  animation: value-bump 0.3s ease-out;
+}
+
+@keyframes value-bump {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
   }
 }

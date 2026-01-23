@@ -5,6 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
+    "dev": "nodemon server.js",
     "selfcheck": "node scripts/selfcheck.js",
     "test": "vitest run",
     "test:watch": "vitest --watch",
@@ -14,7 +15,13 @@
     "lint:fix": "eslint . --fix",
     "prepare": "husky"
   },
-  "keywords": ["alien-rpg", "stress", "panic", "crew-monitor", "weyland-yutani"],
+  "keywords": [
+    "alien-rpg",
+    "stress",
+    "panic",
+    "crew-monitor",
+    "weyland-yutani"
+  ],
   "author": "",
   "license": "MIT",
   "lint-staged": {
@@ -31,6 +38,7 @@
     "eslint": "^9.39.2",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
+    "nodemon": "^3.1.11",
     "socket.io-client": "^4.8.3",
     "vitest": "^4.0.18"
   }

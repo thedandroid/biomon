@@ -13,6 +13,7 @@ const gmList = document.getElementById("gmList");
 const clearPartyBtn = document.getElementById("clearParty");
 
 let lastState = { players: [] };
+let isInitialLoad = true;
 
 // Ephemeral UI state (not synced)
 const ui = {
@@ -24,6 +25,17 @@ function fmt(n, digits = 0) {
 }
 
 function render() {
+  if (isInitialLoad) {
+    // Show loading state on initial page load
+    gmList.innerHTML = `
+      <div class="loading-overlay">
+        <div class="spinner-lg"></div>
+        <div class="loading-text">CONNECTING TO BIOMON...</div>
+      </div>
+    `;
+    return;
+  }
+  
   gmList.innerHTML = "";
   for (const p of lastState.players) {
     const card = document.createElement("div");
@@ -404,9 +416,21 @@ function escapeAttr(s) {
 
 function setModalOpen(open) {
   if (!addModal) return;
-  addModal.classList.toggle("open", Boolean(open));
-  addModal.setAttribute("aria-hidden", open ? "false" : "true");
-  if (open) setTimeout(() => nameEl?.focus?.(), 0);
+  
+  if (open) {
+    // Opening: remove closing class, add open class, focus input
+    addModal.classList.remove("closing");
+    addModal.classList.add("open");
+    addModal.setAttribute("aria-hidden", "false");
+    setTimeout(() => nameEl?.focus?.(), 50);
+  } else {
+    // Closing: add closing class, wait for animation, then remove open class
+    addModal.classList.add("closing");
+    addModal.setAttribute("aria-hidden", "true");
+    setTimeout(() => {
+      addModal.classList.remove("open", "closing");
+    }, 200); // Match CSS transition duration
+  }
 }
 
 openAddBtn?.addEventListener("click", () => setModalOpen(true));
@@ -444,6 +468,7 @@ clearPartyBtn.addEventListener("click", () => {
 
 socket.on("state", (s) => {
   lastState = s || { players: [] };
+  isInitialLoad = false; // Clear initial loading state
   render();
   updateSessionStatus(s);
 });
@@ -466,10 +491,20 @@ const importFileInput = document.getElementById("importFileInput");
 
 function setSessionModalOpen(open) {
   if (!sessionModal) return;
-  sessionModal.classList.toggle("open", Boolean(open));
-  sessionModal.setAttribute("aria-hidden", open ? "false" : "true");
+  
   if (open) {
-    loadCampaignList();
+    // Opening: remove closing class, add open class, load campaigns
+    sessionModal.classList.remove("closing");
+    sessionModal.classList.add("open");
+    sessionModal.setAttribute("aria-hidden", "false");
+    setTimeout(() => loadCampaignList(), 50);
+  } else {
+    // Closing: add closing class, wait for animation, then remove open class
+    sessionModal.classList.add("closing");
+    sessionModal.setAttribute("aria-hidden", "true");
+    setTimeout(() => {
+      sessionModal.classList.remove("open", "closing");
+    }, 200); // Match CSS transition duration
   }
 }
 
@@ -514,10 +549,15 @@ btnSaveCampaign.addEventListener("click", () => {
     return;
   }
   
+  btnSaveCampaign.disabled = true;
+  btnSaveCampaign.innerHTML = '<span class="spinner" style="margin-right: 8px;"></span>SAVING...';
   socket.emit("session:save", { campaignName: name });
 });
 
 socket.on("session:save:result", (result) => {
+  btnSaveCampaign.disabled = false;
+  btnSaveCampaign.textContent = "SAVE CAMPAIGN";
+  
   if (result.success) {
     toast.success(`Campaign saved: ${result.filename}`);
     campaignNameInput.value = "";
@@ -529,6 +569,13 @@ socket.on("session:save:result", (result) => {
 
 // Load Campaign List
 function loadCampaignList() {
+  // Show loading state
+  campaignList.innerHTML = `
+    <div class="loading-overlay">
+      <div class="spinner"></div>
+      <div class="loading-text">LOADING CAMPAIGNS...</div>
+    </div>
+  `;
   socket.emit("session:list");
 }
 
@@ -580,10 +627,15 @@ socket.on("session:load:result", (result) => {
 
 // Export Backup
 btnExport.addEventListener("click", () => {
+  btnExport.disabled = true;
+  btnExport.innerHTML = '<span class="spinner" style="margin-right: 8px;"></span>EXPORTING...';
   socket.emit("session:export");
 });
 
 socket.on("session:export:result", (state) => {
+  btnExport.disabled = false;
+  btnExport.textContent = "EXPORT BACKUP";
+  
   const json = JSON.stringify(state, null, 2);
   const blob = new Blob([json], { type: "application/json" });
   const url = URL.createObjectURL(blob);
@@ -641,3 +693,25 @@ socket.on("session:autosave:info", (info) => {
     setTimeout(() => toast.info(msg, { title: "Session Restored", duration: 6000 }), 500);
   }
 });
+
+// Connection status
+socket.on("connect", () => {
+  console.log("Connected to server");
+});
+
+socket.on("disconnect", () => {
+  toast.warning("Disconnected from server. Attempting to reconnect...", { 
+    duration: 0, 
+    title: "Connection Lost", 
+  });
+});
+
+socket.on("connect_error", () => {
+  toast.error("Failed to connect to server.", { 
+    duration: 0,
+    title: "Connection Error", 
+  });
+});
+
+// Initial render to show loading state
+render();
