@@ -35,7 +35,13 @@ const dataDir = isPackaged ? process.cwd() : __dirname;
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+const io = new Server(server, {
+  cors: {
+    origin: process.env.BIOMON_CORS_ORIGIN || "http://localhost:3051",
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
+});
 
 // Serve static files
 // For pkg builds, look for public/ directory next to the executable
