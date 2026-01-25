@@ -11,6 +11,14 @@ describe("External Integration via Socket.io", () => {
   let port;
   let serverUrl;
   let externalClient;
+  const activeClients = []; // Track all clients for cleanup
+
+  // Helper function to track clients for cleanup
+  const trackClient = (client) => {
+    activeClients.push(client);
+    return client;
+  };
+
   const state = {
     players: [],
     rollEvents: [],
@@ -88,6 +96,16 @@ describe("External Integration via Socket.io", () => {
     });
   });
 
+  afterEach(() => {
+    // Disconnect all tracked clients after each test
+    activeClients.forEach(client => {
+      if (client && client.connected) {
+        client.disconnect();
+      }
+    });
+    activeClients.length = 0; // Clear array
+  });
+
   afterAll((done) => {
     if (externalClient) {
       externalClient.disconnect();
@@ -105,12 +123,12 @@ describe("External Integration via Socket.io", () => {
 
   describe("CORS Configuration", () => {
     it("allows external client connection from allowed origin", (done) => {
-      externalClient = Client(`${serverUrl}/external`, {
+      externalClient = trackClient(Client(`${serverUrl}/external`, {
         reconnection: false,
         extraHeaders: {
           origin: "http://localhost:3051",
         },
-      });
+      }));
 
       externalClient.on("connect", () => {
         expect(externalClient.connected).toBe(true);
@@ -125,9 +143,9 @@ describe("External Integration via Socket.io", () => {
 
     it("successfully connects from different origin with CORS enabled", (done) => {
       // This simulates connecting from the initiative tracker app
-      externalClient = Client(`${serverUrl}/external`, {
+      externalClient = trackClient(Client(`${serverUrl}/external`, {
         reconnection: false,
-      });
+      }));
 
       externalClient.on("connect", () => {
         expect(externalClient.connected).toBe(true);
@@ -142,9 +160,9 @@ describe("External Integration via Socket.io", () => {
 
   describe("State Broadcasts", () => {
     it("receives initial state on connection", (done) => {
-      externalClient = Client(`${serverUrl}/external`, {
+      externalClient = trackClient(Client(`${serverUrl}/external`, {
         reconnection: false,
-      });
+      }));
 
       externalClient.on("state", (receivedState) => {
         expect(receivedState).toHaveProperty("players");
@@ -159,9 +177,9 @@ describe("External Integration via Socket.io", () => {
     it("receives state updates when player is added", (done) => {
       let stateUpdateCount = 0;
 
-      externalClient = Client(`${serverUrl}/external`, {
+      externalClient = trackClient(Client(`${serverUrl}/external`, {
         reconnection: false,
-      });
+      }));
 
       externalClient.on("state", (receivedState) => {
         stateUpdateCount++;
@@ -171,7 +189,7 @@ describe("External Integration via Socket.io", () => {
           expect(receivedState.players.length).toBe(0);
           
           // Trigger a player add from a different client
-          const gmClient = Client(serverUrl, { reconnection: false });
+          const gmClient = trackClient(Client(serverUrl, { reconnection: false }));
           gmClient.on("connect", () => {
             gmClient.emit("player:add", {
               name: "Ellen Ripley",
@@ -194,16 +212,16 @@ describe("External Integration via Socket.io", () => {
       let stateUpdateCount = 0;
       let playerId;
 
-      externalClient = Client(`${serverUrl}/external`, {
+      externalClient = trackClient(Client(`${serverUrl}/external`, {
         reconnection: false,
-      });
+      }));
 
       externalClient.on("state", (receivedState) => {
         stateUpdateCount++;
 
         if (stateUpdateCount === 1) {
           // Add a player first
-          const gmClient = Client(serverUrl, { reconnection: false });
+          const gmClient = trackClient(Client(serverUrl, { reconnection: false }));
           gmClient.on("connect", () => {
             gmClient.emit("player:add", {
               name: "Test Player",
@@ -214,7 +232,7 @@ describe("External Integration via Socket.io", () => {
         } else if (stateUpdateCount === 2) {
           // Player added, now add an effect
           playerId = receivedState.players[0].id;
-          const gmClient = Client(serverUrl, { reconnection: false });
+          const gmClient = trackClient(Client(serverUrl, { reconnection: false }));
           gmClient.on("connect", () => {
             gmClient.emit("player:update", {
               id: playerId,
@@ -246,8 +264,8 @@ describe("External Integration via Socket.io", () => {
 
   describe("Multiple External Clients", () => {
     it("supports multiple simultaneous external connections", (done) => {
-      const client1 = Client(`${serverUrl}/external`, { reconnection: false });
-      const client2 = Client(`${serverUrl}/external`, { reconnection: false });
+      const client1 = trackClient(Client(`${serverUrl}/external`, { reconnection: false }));
+      const client2 = trackClient(Client(`${serverUrl}/external`, { reconnection: false }));
       
       let client1Connected = false;
       let client2Connected = false;
@@ -289,8 +307,8 @@ describe("External Integration via Socket.io", () => {
     });
 
     it("broadcasts state to all connected external clients", (done) => {
-      const client1 = Client(`${serverUrl}/external`, { reconnection: false });
-      const client2 = Client(`${serverUrl}/external`, { reconnection: false });
+      const client1 = trackClient(Client(`${serverUrl}/external`, { reconnection: false }));
+      const client2 = trackClient(Client(`${serverUrl}/external`, { reconnection: false }));
       
       let client1Updates = 0;
       let client2Updates = 0;
@@ -319,7 +337,7 @@ describe("External Integration via Socket.io", () => {
         new Promise(resolve => client1.on("connect", resolve)),
         new Promise(resolve => client2.on("connect", resolve)),
       ]).then(() => {
-        const gmClient = Client(serverUrl, { reconnection: false });
+        const gmClient = trackClient(Client(serverUrl, { reconnection: false }));
         gmClient.on("connect", () => {
           gmClient.emit("player:add", {
             name: "Broadcast Test",
@@ -333,14 +351,14 @@ describe("External Integration via Socket.io", () => {
     it("provides complete effect information in state", (done) => {
       let playerId;
 
-      externalClient = Client(`${serverUrl}/external`, {
+      externalClient = trackClient(Client(`${serverUrl}/external`, {
         reconnection: false,
-      });
+      }));
 
       externalClient.on("state", (receivedState) => {
         if (receivedState.players.length === 0) {
           // Add player with effect
-          const gmClient = Client(serverUrl, { reconnection: false });
+          const gmClient = trackClient(Client(serverUrl, { reconnection: false }));
           gmClient.on("connect", () => {
             gmClient.emit("player:add", {
               name: "Effect Test",
@@ -349,7 +367,7 @@ describe("External Integration via Socket.io", () => {
         } else if (!playerId) {
           // Player added, now add effect
           playerId = receivedState.players[0].id;
-          const gmClient = Client(serverUrl, { reconnection: false });
+          const gmClient = trackClient(Client(serverUrl, { reconnection: false }));
           gmClient.on("connect", () => {
             gmClient.emit("player:update", {
               id: playerId,
@@ -389,23 +407,23 @@ describe("External Integration via Socket.io", () => {
       let playerId;
       let updateCount = 0;
 
-      externalClient = Client(`${serverUrl}/external`, {
+      externalClient = trackClient(Client(`${serverUrl}/external`, {
         reconnection: false,
-      });
+      }));
 
       externalClient.on("state", (receivedState) => {
         updateCount++;
 
         if (updateCount === 1) {
           // Add player
-          const gmClient = Client(serverUrl, { reconnection: false });
+          const gmClient = trackClient(Client(serverUrl, { reconnection: false }));
           gmClient.on("connect", () => {
             gmClient.emit("player:add", { name: "Clear Test" });
           });
         } else if (updateCount === 2) {
           // Add active and cleared effect
           playerId = receivedState.players[0].id;
-          const gmClient = Client(serverUrl, { reconnection: false });
+          const gmClient = trackClient(Client(serverUrl, { reconnection: false }));
           gmClient.on("connect", () => {
             gmClient.emit("player:update", {
               id: playerId,
@@ -456,19 +474,19 @@ describe("External Integration via Socket.io", () => {
     it("provides panic_hesitant effect for initiative card #10", (done) => {
       let playerId;
 
-      externalClient = Client(`${serverUrl}/external`, {
+      externalClient = trackClient(Client(`${serverUrl}/external`, {
         reconnection: false,
-      });
+      }));
 
       externalClient.on("state", (receivedState) => {
         if (receivedState.players.length === 0) {
-          const gmClient = Client(serverUrl, { reconnection: false });
+          const gmClient = trackClient(Client(serverUrl, { reconnection: false }));
           gmClient.on("connect", () => {
             gmClient.emit("player:add", { name: "Hesitant Test" });
           });
         } else if (!playerId) {
           playerId = receivedState.players[0].id;
-          const gmClient = Client(serverUrl, { reconnection: false });
+          const gmClient = trackClient(Client(serverUrl, { reconnection: false }));
           gmClient.on("connect", () => {
             gmClient.emit("player:update", {
               id: playerId,
@@ -500,19 +518,19 @@ describe("External Integration via Socket.io", () => {
     it("provides turn-skipping effects for initiative tracking", (done) => {
       let playerId;
 
-      externalClient = Client(`${serverUrl}/external`, {
+      externalClient = trackClient(Client(`${serverUrl}/external`, {
         reconnection: false,
-      });
+      }));
 
       externalClient.on("state", (receivedState) => {
         if (receivedState.players.length === 0) {
-          const gmClient = Client(serverUrl, { reconnection: false });
+          const gmClient = trackClient(Client(serverUrl, { reconnection: false }));
           gmClient.on("connect", () => {
             gmClient.emit("player:add", { name: "Freeze Test" });
           });
         } else if (!playerId) {
           playerId = receivedState.players[0].id;
-          const gmClient = Client(serverUrl, { reconnection: false });
+          const gmClient = trackClient(Client(serverUrl, { reconnection: false }));
           gmClient.on("connect", () => {
             gmClient.emit("player:update", {
               id: playerId,
