@@ -88,7 +88,7 @@ const STRESS_TABLE = [
     id: "stress_mess_up",
     label: "Mess Up",
     description:
-      "Your action fails regardless of & rolled and you gain +1 stress level.",
+      "Your action fails regardless of successes rolled and you gain +1 stress level.",
     severity: 4,
     persistent: false,
     stressDelta: 1,
