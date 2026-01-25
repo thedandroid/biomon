@@ -35,9 +35,16 @@ const dataDir = isPackaged ? process.cwd() : __dirname;
 
 const app = express();
 const server = http.createServer(app);
+
+// Parse CORS origins from environment variable
+// Supports single origin or comma-separated list
+const corsOrigin = process.env.BIOMON_CORS_ORIGIN
+  ? process.env.BIOMON_CORS_ORIGIN.split(",").map(origin => origin.trim())
+  : "http://localhost:3051";
+
 const io = new Server(server, {
   cors: {
-    origin: process.env.BIOMON_CORS_ORIGIN || "http://localhost:3051",
+    origin: corsOrigin,
     methods: ["GET", "POST"],
     credentials: true,
   },
