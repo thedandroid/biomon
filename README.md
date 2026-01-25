@@ -113,6 +113,17 @@ node server.js
 
 Default port is `3050` (override with `PORT` environment variable).
 
+#### External Integration
+
+BIOMON can broadcast real-time state to external tools (initiative trackers, condition monitors, etc.) via Socket.io.
+
+**Enable external connections**:
+```bash
+BIOMON_CORS_ORIGIN=http://localhost:3051 npm start
+```
+
+See [INTEGRATION.md](./INTEGRATION.md) for developer documentation.
+
 ---
 
 ## How It Works
