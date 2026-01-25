@@ -310,7 +310,13 @@ function resolveNextHigherDifferentEntry(rollType, total, currentEntryId) {
 function broadcast() {
   // Backfill new fields for older in-memory state
   for (const p of state.players) ensurePlayerFields(p);
+  
+  // Broadcast to main namespace (GM/Player views)
   io.emit("state", state);
+  
+  // Broadcast to external namespace (read-only external tools)
+  io.of("/external").emit("state", state);
+  
   scheduleSave(); // Auto-save after every state change
 }
 
@@ -859,6 +865,29 @@ io.on("connection", (socket) => {
 
   // Send autosave info to GM on connection
   socket.emit("session:autosave:info", autosaveInfo);
+});
+
+// ============================================================
+// EXTERNAL INTEGRATION NAMESPACE (Read-Only)
+// ============================================================
+
+// External tools connect to /external namespace for read-only access
+// They receive state broadcasts but cannot emit mutation events
+const externalNamespace = io.of("/external");
+
+externalNamespace.on("connection", (socket) => {
+  console.log(`[EXTERNAL] Client connected: ${socket.id}`);
+  
+  // Send initial state on connection
+  for (const p of state.players) ensurePlayerFields(p);
+  socket.emit("state", state);
+  
+  socket.on("disconnect", (reason) => {
+    console.log(`[EXTERNAL] Client disconnected: ${socket.id} (${reason})`);
+  });
+  
+  // External namespace intentionally has no event handlers
+  // It only receives broadcasts, providing true read-only access
 });
 
 const PORT = process.env.PORT || 3050;

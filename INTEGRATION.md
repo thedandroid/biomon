@@ -4,7 +4,7 @@ This guide provides technical documentation for integrating external application
 
 ## Overview
 
-BIOMON broadcasts its complete application state to connected Socket.io clients whenever any change occurs (player added/removed, health/stress updated, effects applied/cleared, etc.). External tools can connect to BIOMON's Socket.io server to receive these real-time updates and build complementary functionality like initiative tracking, condition monitoring, or combat management.
+BIOMON broadcasts its complete application state to connected Socket.io clients whenever any change occurs (player added/removed, health/stress updated, effects applied/cleared, etc.). External tools can connect to BIOMON's **read-only `/external` namespace** to receive these real-time updates and build complementary functionality like initiative tracking, condition monitoring, or combat management.
 
 **Use Cases**:
 - Initiative trackers that need to know about turn-skipping effects
@@ -12,6 +12,11 @@ BIOMON broadcasts its complete application state to connected Socket.io clients 
 - Combat managers tracking player status
 - Campaign logging tools
 - Custom dashboards
+
+**Security Model**:
+- External tools connect to the `/external` namespace for **true read-only access**
+- They receive `state` broadcasts but **cannot emit mutation events**
+- GM and Player views use the default namespace with full read/write access
 
 ## Connection Setup
 
@@ -37,17 +42,20 @@ BIOMON_CORS_ORIGIN=http://localhost:3051,http://localhost:3052 node server.js
 
 ### Client Connection
 
+**External tools must connect to the `/external` namespace:**
+
 ```javascript
 import { io } from "socket.io-client";
 
-const socket = io("http://localhost:3050", {
+// Connect to the /external namespace for read-only access
+const socket = io("http://localhost:3050/external", {
   reconnection: true,
   reconnectionDelay: 1000,
   reconnectionAttempts: Infinity
 });
 
 socket.on("connect", () => {
-  console.log("Connected to BIOMON");
+  console.log("Connected to BIOMON external namespace");
 });
 
 socket.on("state", (state) => {
@@ -63,6 +71,8 @@ socket.on("connect_error", (error) => {
   console.error("Connection error:", error.message);
 });
 ```
+
+**Important:** The `/external` namespace provides read-only access. Any attempts to emit mutation events (like `player:add`, `player:update`, etc.) will be ignored by the server.
 
 ## Events
 
@@ -254,7 +264,8 @@ BIOMON supports multiple simultaneous external connections. All connected client
 ```javascript
 import { io } from "socket.io-client";
 
-const socket = io("http://localhost:3050", {
+// Connect to the /external namespace for read-only access
+const socket = io("http://localhost:3050/external", {
   reconnection: true,
   reconnectionDelay: 1000
 });
@@ -378,9 +389,11 @@ BIOMON_CORS_ORIGIN="http://localhost:3051, http://localhost:3052"
 
 ## Security Notes
 
-- External clients have **read-only** access via `state` broadcasts
-- External clients **cannot emit events** that modify BIOMON state
-- CORS restricts which origins can connect
+- External tools connect to the `/external` namespace for **true read-only access**
+- The `/external` namespace only broadcasts `state` events and has no mutation event handlers
+- External clients **cannot emit events** that modify BIOMON state (enforced at the server level)
+- CORS restricts which origins can connect to both namespaces
+- GM and Player views use the default namespace (no path) with full read/write capabilities
 - For LAN/remote access, configure CORS appropriately and use firewall rules
 - This system is designed for local development and small gaming groups, not production environments
 

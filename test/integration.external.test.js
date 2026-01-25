@@ -58,7 +58,9 @@ describe("External Integration via Socket.io", () => {
             lastRollEvent: null,
           };
           state.players.push(newPlayer);
+          // Broadcast to both namespaces
           io.emit("state", state);
+          io.of("/external").emit("state", state);
         });
 
         // Handle player:update for testing effect changes
@@ -66,9 +68,20 @@ describe("External Integration via Socket.io", () => {
           const player = state.players.find(p => p.id === payload.id);
           if (player && payload.activeEffects) {
             player.activeEffects = payload.activeEffects;
+            // Broadcast to both namespaces
             io.emit("state", state);
+            io.of("/external").emit("state", state);
           }
         });
+      });
+      
+      // Setup /external namespace (read-only)
+      const externalNamespace = io.of("/external");
+      externalNamespace.on("connection", (socket) => {
+        // Send initial state
+        socket.emit("state", state);
+        
+        // No event handlers - read-only namespace
       });
 
       done();
@@ -92,7 +105,7 @@ describe("External Integration via Socket.io", () => {
 
   describe("CORS Configuration", () => {
     it("allows external client connection from allowed origin", (done) => {
-      externalClient = Client(serverUrl, {
+      externalClient = Client(`${serverUrl}/external`, {
         reconnection: false,
         extraHeaders: {
           origin: "http://localhost:3051",
@@ -112,7 +125,7 @@ describe("External Integration via Socket.io", () => {
 
     it("successfully connects from different origin with CORS enabled", (done) => {
       // This simulates connecting from the initiative tracker app
-      externalClient = Client(serverUrl, {
+      externalClient = Client(`${serverUrl}/external`, {
         reconnection: false,
       });
 
@@ -129,7 +142,7 @@ describe("External Integration via Socket.io", () => {
 
   describe("State Broadcasts", () => {
     it("receives initial state on connection", (done) => {
-      externalClient = Client(serverUrl, {
+      externalClient = Client(`${serverUrl}/external`, {
         reconnection: false,
       });
 
@@ -146,7 +159,7 @@ describe("External Integration via Socket.io", () => {
     it("receives state updates when player is added", (done) => {
       let stateUpdateCount = 0;
 
-      externalClient = Client(serverUrl, {
+      externalClient = Client(`${serverUrl}/external`, {
         reconnection: false,
       });
 
@@ -181,7 +194,7 @@ describe("External Integration via Socket.io", () => {
       let stateUpdateCount = 0;
       let playerId;
 
-      externalClient = Client(serverUrl, {
+      externalClient = Client(`${serverUrl}/external`, {
         reconnection: false,
       });
 
@@ -233,8 +246,8 @@ describe("External Integration via Socket.io", () => {
 
   describe("Multiple External Clients", () => {
     it("supports multiple simultaneous external connections", (done) => {
-      const client1 = Client(serverUrl, { reconnection: false });
-      const client2 = Client(serverUrl, { reconnection: false });
+      const client1 = Client(`${serverUrl}/external`, { reconnection: false });
+      const client2 = Client(`${serverUrl}/external`, { reconnection: false });
       
       let client1Connected = false;
       let client2Connected = false;
@@ -276,8 +289,8 @@ describe("External Integration via Socket.io", () => {
     });
 
     it("broadcasts state to all connected external clients", (done) => {
-      const client1 = Client(serverUrl, { reconnection: false });
-      const client2 = Client(serverUrl, { reconnection: false });
+      const client1 = Client(`${serverUrl}/external`, { reconnection: false });
+      const client2 = Client(`${serverUrl}/external`, { reconnection: false });
       
       let client1Updates = 0;
       let client2Updates = 0;
@@ -320,7 +333,7 @@ describe("External Integration via Socket.io", () => {
     it("provides complete effect information in state", (done) => {
       let playerId;
 
-      externalClient = Client(serverUrl, {
+      externalClient = Client(`${serverUrl}/external`, {
         reconnection: false,
       });
 
@@ -376,7 +389,7 @@ describe("External Integration via Socket.io", () => {
       let playerId;
       let updateCount = 0;
 
-      externalClient = Client(serverUrl, {
+      externalClient = Client(`${serverUrl}/external`, {
         reconnection: false,
       });
 
@@ -443,7 +456,7 @@ describe("External Integration via Socket.io", () => {
     it("provides panic_hesitant effect for initiative card #10", (done) => {
       let playerId;
 
-      externalClient = Client(serverUrl, {
+      externalClient = Client(`${serverUrl}/external`, {
         reconnection: false,
       });
 
@@ -487,7 +500,7 @@ describe("External Integration via Socket.io", () => {
     it("provides turn-skipping effects for initiative tracking", (done) => {
       let playerId;
 
-      externalClient = Client(serverUrl, {
+      externalClient = Client(`${serverUrl}/external`, {
         reconnection: false,
       });
 
