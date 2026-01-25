@@ -8,8 +8,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs";
 import express from "express";
-import http from "http";
-import { Server } from "socket.io";
+import { createServer } from "./createServer.js";
 import { resolveEntry, getEntryById } from "./responseTables.js";
 import {
   clamp,
@@ -33,22 +32,10 @@ const __dirname = path.dirname(__filename);
 const isPackaged = typeof process.pkg !== "undefined";
 const dataDir = isPackaged ? process.cwd() : __dirname;
 
-const app = express();
-const server = http.createServer(app);
-
-// Parse CORS origins from environment variable
+// Create server with CORS configuration from environment variable
 // Supports single origin or comma-separated list
-const corsOrigin = process.env.BIOMON_CORS_ORIGIN
-  ? process.env.BIOMON_CORS_ORIGIN.split(",").map(origin => origin.trim())
-  : "http://localhost:3051";
-
-const io = new Server(server, {
-  cors: {
-    origin: corsOrigin,
-    methods: ["GET", "POST"],
-    credentials: true,
-  },
-});
+const corsOrigin = process.env.BIOMON_CORS_ORIGIN || "http://localhost:3051";
+const { app, server, io } = createServer({ corsOrigin });
 
 // Serve static files
 // For pkg builds, look for public/ directory next to the executable

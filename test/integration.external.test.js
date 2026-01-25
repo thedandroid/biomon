@@ -1,11 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
 import { io as Client } from "socket.io-client";
-import express from "express";
-import http from "http";
-import { Server } from "socket.io";
+import { createServer } from "../createServer.js";
 
 describe("External Integration via Socket.io", () => {
-  let app;
   let server;
   let io;
   let port;
@@ -32,16 +29,12 @@ describe("External Integration via Socket.io", () => {
   };
 
   beforeAll((done) => {
-    // Create a minimal test server with CORS enabled
-    app = express();
-    server = http.createServer(app);
-    io = new Server(server, {
-      cors: {
-        origin: "http://localhost:3051",
-        methods: ["GET", "POST"],
-        credentials: true,
-      },
+    // Use the real BIOMON server creation logic with test CORS config
+    const serverInstance = createServer({
+      corsOrigin: "http://localhost:3051",
     });
+    server = serverInstance.server;
+    io = serverInstance.io;
 
     // Find available port
     server.listen(0, () => {
