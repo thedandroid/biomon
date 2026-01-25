@@ -141,8 +141,9 @@ describe("External Integration via Socket.io", () => {
       });
     });
 
-    it("successfully connects from different origin with CORS enabled", (done) => {
-      // This simulates connecting from the initiative tracker app
+    it("successfully connects without origin header (Node.js client)", (done) => {
+      // Node.js Socket.io clients don't send Origin headers by default,
+      // so this tests that the server accepts connections without Origin
       externalClient = trackClient(Client(`${serverUrl}/external`, {
         reconnection: false,
       }));
@@ -154,6 +155,26 @@ describe("External Integration via Socket.io", () => {
 
       externalClient.on("connect_error", (error) => {
         done(new Error(`Connection failed: ${error.message}`));
+      });
+    });
+
+    it("rejects connection from disallowed origin", (done) => {
+      // Test that a disallowed origin is rejected
+      externalClient = trackClient(Client(`${serverUrl}/external`, {
+        reconnection: false,
+        extraHeaders: {
+          origin: "http://evil.com",
+        },
+      }));
+
+      externalClient.on("connect", () => {
+        done(new Error("Should not connect with disallowed origin"));
+      });
+
+      externalClient.on("connect_error", (error) => {
+        // Connection should fail with CORS error
+        expect(error).toBeDefined();
+        done();
       });
     });
   });
