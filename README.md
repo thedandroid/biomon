@@ -2,7 +2,7 @@
 
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D14.0.0-brightgreen.svg)](https://nodejs.org/)
-[![Tests](https://img.shields.io/badge/tests-67%20passing-brightgreen.svg)](https://github.com/thedandroid/biomon)
+[![Tests](https://img.shields.io/badge/tests-78%20passing-brightgreen.svg)](https://github.com/thedandroid/biomon)
 
 > **Biological Monitoring System** — A Weyland-Yutani medical terminal for tracking crew vitals, stress, and panic responses in *Alien RPG* games.
 
