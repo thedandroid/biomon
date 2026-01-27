@@ -12,7 +12,7 @@ This roadmap transforms the BIOMON server from JavaScript to TypeScript with str
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Tooling Foundation** - TypeScript infrastructure without converting source files
+- [x] **Phase 1: Tooling Foundation** - TypeScript infrastructure without converting source files
 - [ ] **Phase 2: Type Definitions** - Central type definitions as contracts between modules
 - [ ] **Phase 3: Pure Data & Utilities** - Convert pure functions and data modules
 - [ ] **Phase 4: Server Infrastructure** - Convert server factory and add persistence types
@@ -34,8 +34,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 2 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — Install TypeScript deps, create tsconfig.json, update scripts
-- [ ] 01-02-PLAN.md — Integrate typescript-eslint and update lint-staged
+- [x] 01-01-PLAN.md — Install TypeScript deps, create tsconfig.json, update scripts
+- [x] 01-02-PLAN.md — Integrate typescript-eslint and update lint-staged
 
 ### Phase 2: Type Definitions
 **Goal**: Create central type definitions that serve as contracts between modules
@@ -46,10 +46,10 @@ Plans:
   2. All types exported and importable from src/types/
   3. No runtime code in type files (pure type definitions)
   4. Socket.io event maps defined with full payload shapes
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 02-01: TBD
+- [ ] 02-01-PLAN.md — Create state types, event maps, table types, and barrel export in src/types/
 
 ### Phase 3: Pure Data & Utilities
 **Goal**: Convert pure functions and data modules to TypeScript
@@ -116,8 +116,8 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Tooling Foundation | 0/2 | Planned | - |
-| 2. Type Definitions | 0/? | Not started | - |
+| 1. Tooling Foundation | 2/2 | Complete | 2026-01-27 |
+| 2. Type Definitions | 0/1 | Planned | - |
 | 3. Pure Data & Utilities | 0/? | Not started | - |
 | 4. Server Infrastructure | 0/? | Not started | - |
 | 5. Event Handler Migration | 0/? | Not started | - |
