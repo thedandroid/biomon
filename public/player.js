@@ -18,6 +18,7 @@ const alertState = {
 const ecgEngine = (() => {
   const items = new Map(); // id -> { canvas, ctx, buf, x, phase, t, params, hrVariability, baselineVariation }
   let raf = null;
+  let lastTickTime = null;
 
   function nowMs() {
     return Date.now();
@@ -78,7 +79,7 @@ const ecgEngine = (() => {
   }
 
   // Generate one ECG-like sample (baseline + QRS spike + small jitter)
-  function sample(it) {
+  function sample(it, deltaTime) {
     const { health, maxHealth, stress } = it.params;
 
     const maxH = maxHealth || 5;
@@ -87,7 +88,7 @@ const ecgEngine = (() => {
 
     // If health is 0, flatline with minimal electrical noise
     if (hp <= 0) {
-      it.t += 1 / 60;
+      it.t += deltaTime;
       it.currentBPM = 0; // Flatline = no heartbeat
       const tinyDrift = Math.sin((it.t * 0.1 + it.phase) * Math.PI * 2) * 0.002;
       const tinyNoise = (Math.random() - 0.5) * 0.006;
@@ -126,7 +127,7 @@ const ecgEngine = (() => {
     const evPanic = evActive && ev.type === "panic";
 
     // Time progression (normalized)
-    it.t += 1 / 60;
+    it.t += deltaTime;
     let p = (it.t * hz + it.phase) % 1; // 0..1
     if (p < 0) p += 1; // Handle negative modulo
 
@@ -352,17 +353,28 @@ const ecgEngine = (() => {
     ctx.globalAlpha = 1;
   }
 
-  function tick() {
+  function tick(timestamp) {
+    // Calculate delta time in seconds
+    if (lastTickTime === null) {
+      lastTickTime = timestamp;
+    }
+    const deltaMs = timestamp - lastTickTime;
+    lastTickTime = timestamp;
+    const deltaTime = deltaMs / 1000; // Convert to seconds
+    
     // Advance each buffer by 1 pixel column per frame
     for (const it of items.values()) {
       const W = it.canvas.width;
-      it.buf[it.x] = sample(it);
+      it.buf[it.x] = sample(it, deltaTime);
       it.x = (it.x + 1) % W;
       draw(it);
     }
 
     if (items.size) raf = requestAnimationFrame(tick);
-    else raf = null;
+    else {
+      raf = null;
+      lastTickTime = null; // Reset for next animation cycle
+    }
   }
 
   function getBPM(id) {
