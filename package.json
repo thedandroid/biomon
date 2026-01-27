@@ -41,7 +41,7 @@
   "author": "",
   "license": "MIT",
   "lint-staged": {
-    "*.js": [
+    "*.{js,ts}": [
       "eslint --fix"
     ]
   },
