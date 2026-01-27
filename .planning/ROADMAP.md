@@ -13,7 +13,7 @@ This roadmap transforms the BIOMON server from JavaScript to TypeScript with str
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Tooling Foundation** - TypeScript infrastructure without converting source files
-- [ ] **Phase 2: Type Definitions** - Central type definitions as contracts between modules
+- [x] **Phase 2: Type Definitions** - Central type definitions as contracts between modules
 - [ ] **Phase 3: Pure Data & Utilities** - Convert pure functions and data modules
 - [ ] **Phase 4: Server Infrastructure** - Convert server factory and add persistence types
 - [ ] **Phase 5: Event Handler Migration** - Extract and type all Socket.io event handlers
@@ -49,7 +49,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 02-01-PLAN.md — Create state types, event maps, table types, and barrel export in src/types/
+- [x] 02-01-PLAN.md — Create state types, event maps, table types, and barrel export in src/types/
 
 ### Phase 3: Pure Data & Utilities
 **Goal**: Convert pure functions and data modules to TypeScript
@@ -117,7 +117,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Tooling Foundation | 2/2 | Complete | 2026-01-27 |
-| 2. Type Definitions | 0/1 | Planned | - |
+| 2. Type Definitions | 1/1 | Complete | 2026-01-27 |
 | 3. Pure Data & Utilities | 0/? | Not started | - |
 | 4. Server Infrastructure | 0/? | Not started | - |
 | 5. Event Handler Migration | 0/? | Not started | - |
