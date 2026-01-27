@@ -31,10 +31,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. `npm run build` produces working executable
   4. All existing tests pass unchanged
   5. lint-staged handles TypeScript files
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 01-01: TBD
+- [ ] 01-01-PLAN.md — Install TypeScript deps, create tsconfig.json, update scripts
+- [ ] 01-02-PLAN.md — Integrate typescript-eslint and update lint-staged
 
 ### Phase 2: Type Definitions
 **Goal**: Create central type definitions that serve as contracts between modules
@@ -115,7 +116,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Tooling Foundation | 0/? | Not started | - |
+| 1. Tooling Foundation | 0/2 | Planned | - |
 | 2. Type Definitions | 0/? | Not started | - |
 | 3. Pure Data & Utilities | 0/? | Not started | - |
 | 4. Server Infrastructure | 0/? | Not started | - |
