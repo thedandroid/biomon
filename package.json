@@ -7,13 +7,14 @@
   "bin": "server.cjs",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js",
+    "dev": "tsx watch server.js",
+    "typecheck": "tsc --noEmit",
     "selfcheck": "node scripts/selfcheck.js",
     "test": "vitest run",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest --coverage",
     "test:ui": "vitest --ui",
-    "build": "node build.js && pkg dist/server.bundled.cjs --targets node18-win-x64 --output dist/biomon",
+    "build": "npm run typecheck && node build.js && pkg dist/server.bundled.cjs --targets node18-win-x64 --output dist/biomon",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "prepare": "husky"
