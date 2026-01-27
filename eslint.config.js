@@ -1,8 +1,11 @@
-// ESLint flat config for ESLint v9+
-import js from "@eslint/js";
+// ESLint flat config for ESLint v9+ with TypeScript support
+import eslint from "@eslint/js";
+import { defineConfig } from "eslint/config";
+import tseslint from "typescript-eslint";
 
-export default [
-  js.configs.recommended,
+export default defineConfig(
+  eslint.configs.recommended,
+  tseslint.configs.recommended,
   {
     languageOptions: {
       ecmaVersion: "latest",
@@ -25,26 +28,47 @@ export default [
       },
     },
     rules: {
-      // Style rules matching AGENTS.md conventions
+      // Style rules matching existing conventions
       indent: ["error", 2],
       quotes: ["error", "double", { avoidEscape: true }],
       semi: ["error", "always"],
       "comma-dangle": ["error", "always-multiline"],
-      
+
       // Best practices
-      "no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
-      "no-console": "off", // Console logging is intentional
+      "no-console": "off",
       "prefer-const": "warn",
       "no-var": "error",
-      
+
       // ES6+
       "arrow-spacing": "error",
       "template-curly-spacing": "error",
       "object-shorthand": "warn",
-      
+
       // Potential errors
       "no-undef": "error",
       "no-unreachable": "error",
+
+      // TypeScript-specific: use TS rule instead of base
+      "no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
+    },
+  },
+  {
+    // TypeScript files: enable type-checked rules
+    files: ["**/*.ts"],
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+  },
+  {
+    // JavaScript files: disable type-checked rules and allow require imports
+    files: ["**/*.js"],
+    extends: [tseslint.configs.disableTypeChecked],
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
     },
   },
   {
@@ -78,8 +102,8 @@ export default [
     },
   },
   {
-    // Test files and config use ES modules
-    files: ["test/**/*.js", "vitest.config.js", "eslint.config.js"],
+    // Test files
+    files: ["test/**/*.{js,ts}", "vitest.config.js", "eslint.config.js"],
     languageOptions: {
       sourceType: "module",
       globals: {
@@ -104,8 +128,9 @@ export default [
     ignores: [
       "node_modules/",
       "coverage/",
+      "dist/",
       "*.min.js",
-      "public/toast.js", // Toast creates global, no-redeclare false positive
+      "public/toast.js",
     ],
   },
-];
+);
