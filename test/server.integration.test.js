@@ -375,23 +375,24 @@ describe("Socket.io integration tests", () => {
   });
 
   describe("player:add", () => {
-    it("should add a new player with default values", (done) => {
+    it("should add a new player with default values", async () => {
       clientSocket.emit("player:add", { name: "Test Player" });
 
-      clientSocket.once("state", (newState) => {
-        expect(newState.players).toHaveLength(1);
-        expect(newState.players[0].name).toBe("Test Player");
-        expect(newState.players[0].health).toBe(5);
-        expect(newState.players[0].maxHealth).toBe(5);
-        expect(newState.players[0].stress).toBe(0);
-        expect(newState.players[0].resolve).toBe(0);
-        expect(newState.players[0].activeEffects).toEqual([]);
-        expect(newState.players[0].id).toBeTruthy();
-        done();
+      const newState = await new Promise((resolve) => {
+        clientSocket.once("state", resolve);
       });
+
+      expect(newState.players).toHaveLength(1);
+      expect(newState.players[0].name).toBe("Test Player");
+      expect(newState.players[0].health).toBe(5);
+      expect(newState.players[0].maxHealth).toBe(5);
+      expect(newState.players[0].stress).toBe(0);
+      expect(newState.players[0].resolve).toBe(0);
+      expect(newState.players[0].activeEffects).toEqual([]);
+      expect(newState.players[0].id).toBeTruthy();
     });
 
-    it("should add player with custom values", (done) => {
+    it("should add player with custom values", async () => {
       clientSocket.emit("player:add", {
         name: "Custom Player",
         health: 3,
@@ -400,67 +401,72 @@ describe("Socket.io integration tests", () => {
         resolve: 2,
       });
 
-      clientSocket.once("state", (newState) => {
-        expect(newState.players).toHaveLength(1);
-        const player = newState.players[0];
-        expect(player.name).toBe("Custom Player");
-        expect(player.health).toBe(3);
-        expect(player.maxHealth).toBe(7);
-        expect(player.stress).toBe(5);
-        expect(player.resolve).toBe(2);
-        done();
+      const newState = await new Promise((resolve) => {
+        clientSocket.once("state", resolve);
       });
+
+      expect(newState.players).toHaveLength(1);
+      const player = newState.players[0];
+      expect(player.name).toBe("Custom Player");
+      expect(player.health).toBe(3);
+      expect(player.maxHealth).toBe(7);
+      expect(player.stress).toBe(5);
+      expect(player.resolve).toBe(2);
     });
 
-    it("should handle unnamed player", (done) => {
+    it("should handle unnamed player", async () => {
       clientSocket.emit("player:add", { name: "" });
 
-      clientSocket.once("state", (newState) => {
-        expect(newState.players[0].name).toBe("UNNAMED");
-        done();
+      const newState = await new Promise((resolve) => {
+        clientSocket.once("state", resolve);
       });
+
+      expect(newState.players[0].name).toBe("UNNAMED");
     });
 
-    it("should truncate long names to 40 characters", (done) => {
+    it("should truncate long names to 40 characters", async () => {
       const longName = "A".repeat(50);
       clientSocket.emit("player:add", { name: longName });
 
-      clientSocket.once("state", (newState) => {
-        expect(newState.players[0].name).toHaveLength(40);
-        done();
+      const newState = await new Promise((resolve) => {
+        clientSocket.once("state", resolve);
       });
+
+      expect(newState.players[0].name).toHaveLength(40);
     });
 
-    it("should clamp health values", (done) => {
+    it("should clamp health values", async () => {
       clientSocket.emit("player:add", {
         name: "Test",
         health: 20,
         maxHealth: 15,
       });
 
-      clientSocket.once("state", (newState) => {
-        const player = newState.players[0];
-        expect(player.maxHealth).toBe(10); // MAX_HEALTH_CAP
-        expect(player.health).toBe(10);
-        done();
+      const newState = await new Promise((resolve) => {
+        clientSocket.once("state", resolve);
       });
+
+      const player = newState.players[0];
+      expect(player.maxHealth).toBe(10); // MAX_HEALTH_CAP
+      expect(player.health).toBe(10);
     });
 
-    it("should clamp stress to MAX_STRESS", (done) => {
+    it("should clamp stress to MAX_STRESS", async () => {
       clientSocket.emit("player:add", {
         name: "Test",
         stress: 99,
       });
 
-      clientSocket.once("state", (newState) => {
-        expect(newState.players[0].stress).toBe(10);
-        done();
+      const newState = await new Promise((resolve) => {
+        clientSocket.once("state", resolve);
       });
+
+      expect(newState.players[0].stress).toBe(10);
     });
   });
 
   describe("player:remove", () => {
-    it("should remove a player by id", (done) => {
+    it("should remove a player by id", async () => {
       state.players.push({
         id: "test-id-123",
         name: "Test Player",
@@ -474,13 +480,14 @@ describe("Socket.io integration tests", () => {
 
       clientSocket.emit("player:remove", { id: "test-id-123" });
 
-      clientSocket.once("state", (newState) => {
-        expect(newState.players).toHaveLength(0);
-        done();
+      const newState = await new Promise((resolve) => {
+        clientSocket.once("state", resolve);
       });
+
+      expect(newState.players).toHaveLength(0);
     });
 
-    it("should not affect other players", (done) => {
+    it("should not affect other players", async () => {
       state.players.push(
         {
           id: "player-1",
@@ -506,11 +513,12 @@ describe("Socket.io integration tests", () => {
 
       clientSocket.emit("player:remove", { id: "player-1" });
 
-      clientSocket.once("state", (newState) => {
-        expect(newState.players).toHaveLength(1);
-        expect(newState.players[0].id).toBe("player-2");
-        done();
+      const newState = await new Promise((resolve) => {
+        clientSocket.once("state", resolve);
       });
+
+      expect(newState.players).toHaveLength(1);
+      expect(newState.players[0].id).toBe("player-2");
     });
   });
 
@@ -528,71 +536,73 @@ describe("Socket.io integration tests", () => {
       });
     });
 
-    it("should update player name", (done) => {
+    it("should update player name", async () => {
       clientSocket.emit("player:update", {
         id: "test-player",
         name: "Updated Name",
       });
 
-      clientSocket.once("state", (newState) => {
-        expect(newState.players[0].name).toBe("Updated Name");
-        done();
+      const newState = await new Promise((resolve) => {
+        clientSocket.once("state", resolve);
       });
+
+      expect(newState.players[0].name).toBe("Updated Name");
     });
 
-    it("should update player health", (done) => {
+    it("should update player health", async () => {
       clientSocket.emit("player:update", {
         id: "test-player",
         health: 2,
       });
 
-      clientSocket.once("state", (newState) => {
-        expect(newState.players[0].health).toBe(2);
-        done();
+      const newState = await new Promise((resolve) => {
+        clientSocket.once("state", resolve);
       });
+
+      expect(newState.players[0].health).toBe(2);
     });
 
-    it("should update player stress", (done) => {
+    it("should update player stress", async () => {
       clientSocket.emit("player:update", {
         id: "test-player",
         stress: 7,
       });
 
-      clientSocket.once("state", (newState) => {
-        expect(newState.players[0].stress).toBe(7);
-        done();
+      const newState = await new Promise((resolve) => {
+        clientSocket.once("state", resolve);
       });
+
+      expect(newState.players[0].stress).toBe(7);
     });
 
-    it("should cap health at maxHealth when updating maxHealth", (done) => {
+    it("should cap health at maxHealth when updating maxHealth", async () => {
       clientSocket.emit("player:update", {
         id: "test-player",
         maxHealth: 3,
       });
 
-      clientSocket.once("state", (newState) => {
-        expect(newState.players[0].maxHealth).toBe(3);
-        expect(newState.players[0].health).toBe(3);
-        done();
+      const newState = await new Promise((resolve) => {
+        clientSocket.once("state", resolve);
       });
+
+      expect(newState.players[0].maxHealth).toBe(3);
+      expect(newState.players[0].health).toBe(3);
     });
 
-    it("should not update non-existent player", (done) => {
+    it("should not update non-existent player", async () => {
       const originalState = JSON.parse(JSON.stringify(state));
       clientSocket.emit("player:update", {
         id: "non-existent",
         stress: 10,
       });
 
-      setTimeout(() => {
-        expect(state.players[0].stress).toBe(originalState.players[0].stress);
-        done();
-      }, 100);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      expect(state.players[0].stress).toBe(originalState.players[0].stress);
     });
   });
 
   describe("party:clear", () => {
-    it("should clear all players and roll events", (done) => {
+    it("should clear all players and roll events", async () => {
       state.players.push({
         id: "player-1",
         name: "Test",
@@ -607,11 +617,12 @@ describe("Socket.io integration tests", () => {
 
       clientSocket.emit("party:clear");
 
-      clientSocket.once("state", (newState) => {
-        expect(newState.players).toHaveLength(0);
-        expect(newState.rollEvents).toHaveLength(0);
-        done();
+      const newState = await new Promise((resolve) => {
+        clientSocket.once("state", resolve);
       });
+
+      expect(newState.players).toHaveLength(0);
+      expect(newState.rollEvents).toHaveLength(0);
     });
   });
 
@@ -629,53 +640,53 @@ describe("Socket.io integration tests", () => {
       });
     });
 
-    it("should create a stress roll event", (done) => {
+    it("should create a stress roll event", async () => {
       clientSocket.emit("roll:trigger", {
         playerId: "test-player",
         rollType: "stress",
         modifiers: 0,
       });
 
-      clientSocket.once("state", (newState) => {
-        const player = newState.players[0];
-        expect(player.lastRollEvent).toBeDefined();
-        expect(player.lastRollEvent.type).toBe("stress");
-        expect(player.lastRollEvent.die).toBeGreaterThanOrEqual(1);
-        expect(player.lastRollEvent.die).toBeLessThanOrEqual(6);
-        expect(player.lastRollEvent.stress).toBe(3);
-        expect(player.lastRollEvent.resolve).toBe(1);
-        expect(newState.rollEvents).toHaveLength(1);
-        done();
+      const newState = await new Promise((resolve) => {
+        clientSocket.once("state", resolve);
       });
+
+      const player = newState.players[0];
+      expect(player.lastRollEvent).toBeDefined();
+      expect(player.lastRollEvent.type).toBe("stress");
+      expect(player.lastRollEvent.die).toBeGreaterThanOrEqual(1);
+      expect(player.lastRollEvent.die).toBeLessThanOrEqual(6);
+      expect(player.lastRollEvent.stress).toBe(3);
+      expect(player.lastRollEvent.resolve).toBe(1);
+      expect(newState.rollEvents).toHaveLength(1);
     });
 
-    it("should create a panic roll event", (done) => {
+    it("should create a panic roll event", async () => {
       clientSocket.emit("roll:trigger", {
         playerId: "test-player",
         rollType: "panic",
         modifiers: 2,
       });
 
-      clientSocket.once("state", (newState) => {
-        const player = newState.players[0];
-        expect(player.lastRollEvent).toBeDefined();
-        expect(player.lastRollEvent.type).toBe("panic");
-        expect(player.lastRollEvent.modifiers).toBe(2);
-        done();
+      const newState = await new Promise((resolve) => {
+        clientSocket.once("state", resolve);
       });
+
+      const player = newState.players[0];
+      expect(player.lastRollEvent).toBeDefined();
+      expect(player.lastRollEvent.type).toBe("panic");
+      expect(player.lastRollEvent.modifiers).toBe(2);
     });
 
-    it("should not create roll for non-existent player", (done) => {
+    it("should not create roll for non-existent player", async () => {
       clientSocket.emit("roll:trigger", {
         playerId: "non-existent",
         rollType: "stress",
         modifiers: 0,
       });
 
-      setTimeout(() => {
-        expect(state.rollEvents).toHaveLength(0);
-        done();
-      }, 100);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      expect(state.rollEvents).toHaveLength(0);
     });
   });
 
@@ -718,21 +729,22 @@ describe("Socket.io integration tests", () => {
       state.players.push(player);
     });
 
-    it("should apply a roll result and create persistent effect", (done) => {
+    it("should apply a roll result and create persistent effect", async () => {
       clientSocket.emit("roll:apply", {
         playerId: "test-player",
         eventId: "test-event-123",
       });
 
-      clientSocket.once("state", (newState) => {
-        const player = newState.players[0];
-        expect(player.lastRollEvent.applied).toBe(true);
-        expect(player.activeEffects.length).toBeGreaterThan(0);
-        done();
+      const newState = await new Promise((resolve) => {
+        clientSocket.once("state", resolve);
       });
+
+      const player = newState.players[0];
+      expect(player.lastRollEvent.applied).toBe(true);
+      expect(player.activeEffects.length).toBeGreaterThan(0);
     });
 
-    it("should not re-apply an already applied roll", (done) => {
+    it("should not re-apply an already applied roll", async () => {
       state.players[0].lastRollEvent.applied = true;
       const effectCountBefore = state.players[0].activeEffects.length;
 
@@ -741,10 +753,8 @@ describe("Socket.io integration tests", () => {
         eventId: "test-event-123",
       });
 
-      setTimeout(() => {
-        expect(state.players[0].activeEffects).toHaveLength(effectCountBefore);
-        done();
-      }, 100);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      expect(state.players[0].activeEffects).toHaveLength(effectCountBefore);
     });
   });
 
@@ -772,30 +782,29 @@ describe("Socket.io integration tests", () => {
       });
     });
 
-    it("should clear an active effect", (done) => {
+    it("should clear an active effect", async () => {
       clientSocket.emit("effect:clear", {
         playerId: "test-player",
         effectId: "effect-123",
       });
 
-      clientSocket.once("state", (newState) => {
-        const effect = newState.players[0].activeEffects[0];
-        expect(effect.clearedAt).toBeTruthy();
-        done();
+      const newState = await new Promise((resolve) => {
+        clientSocket.once("state", resolve);
       });
+
+      const effect = newState.players[0].activeEffects[0];
+      expect(effect.clearedAt).toBeTruthy();
     });
 
-    it("should not clear non-existent effect", (done) => {
+    it("should not clear non-existent effect", async () => {
       clientSocket.emit("effect:clear", {
         playerId: "test-player",
         effectId: "non-existent",
       });
 
-      setTimeout(() => {
-        const effect = state.players[0].activeEffects[0];
-        expect(effect.clearedAt).toBeNull();
-        done();
-      }, 100);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      const effect = state.players[0].activeEffects[0];
+      expect(effect.clearedAt).toBeNull();
     });
   });
 });
