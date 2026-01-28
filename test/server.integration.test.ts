@@ -33,7 +33,11 @@ import {
 type TypedClientSocket = ClientSocket<ServerToClientEvents, ClientToServerEvents>;
 type TypedServer = Server<ClientToServerEvents, ServerToClientEvents>;
 
-function resolveNextHigherDifferentEntry(rollType, total, currentEntryId) {
+function resolveNextHigherDifferentEntry(
+  rollType: "stress" | "panic",
+  total: number,
+  currentEntryId: string | null
+): TableEntry | null {
   const startId = String(currentEntryId ?? "");
   let t = clampInt(total, -999, 999);
   for (let i = 0; i < 25; i++) {
@@ -51,20 +55,30 @@ describe("Socket.io integration tests", () => {
   let httpServer: HttpServer;
   let state: GameState;
 
-  function pushRollEvent(ev) {
+  function pushRollEvent(ev: RollEvent): void {
     state.rollEvents.push(ev);
     if (state.rollEvents.length > ROLL_FEED_CAP) {
       state.rollEvents.splice(0, state.rollEvents.length - ROLL_FEED_CAP);
     }
   }
 
-  function broadcast() {
+  function broadcast(): void {
     for (const p of state.players) ensurePlayerFields(p);
     io.emit("state", state);
   }
 
   beforeAll(async () => {
-    state = { players: [], rollEvents: [] };
+    state = {
+      players: [],
+      rollEvents: [],
+      missionLog: [],
+      metadata: {
+        campaignName: null,
+        createdAt: null,
+        lastSaved: null,
+        sessionCount: 0,
+      },
+    };
     
     const app = express();
     httpServer = createServer(app);
@@ -387,6 +401,13 @@ describe("Socket.io integration tests", () => {
     state = {
       players: [],
       rollEvents: [],
+      missionLog: [],
+      metadata: {
+        campaignName: null,
+        createdAt: null,
+        lastSaved: null,
+        sessionCount: 0,
+      },
     };
   });
 
