@@ -204,7 +204,7 @@ export function registerRollHandlers(
     }
 
     if (entry.persistent) {
-      const effect = {
+      const effect: Effect = {
         id: deps.newId(),
         type: entry.id,
         label: entry.label,
@@ -214,7 +214,7 @@ export function registerRollHandlers(
           5,
         ),
         createdAt: Date.now(),
-        durationType: "manual" as const,
+        durationType: "manual",
         durationValue: entry.durationValue,
         clearedAt: null,
       };

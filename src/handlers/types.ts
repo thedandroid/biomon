@@ -7,6 +7,7 @@ import type {
   GameState,
   Player,
   RollType,
+  Effect,
   ClientToServerEvents,
   ServerToClientEvents,
 } from "../types/index.js";
@@ -81,4 +82,4 @@ export interface SessionDependencies extends HandlerDependencies {
 }
 
 // Re-export socket types for handler modules
-export type { GameState, Player, RollType };
+export type { GameState, Player, RollType, Effect };
