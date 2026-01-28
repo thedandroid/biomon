@@ -1,0 +1,351 @@
+import type {
+  TypedServer,
+  TypedSocket,
+  GameState,
+  HandlerDependencies,
+  RollType,
+  Effect,
+} from "./types.js";
+
+export function registerRollHandlers(
+  io: TypedServer,
+  socket: TypedSocket,
+  state: GameState,
+  deps: HandlerDependencies,
+): void {
+  // roll:trigger - lines 396-512
+  socket.on("roll:trigger", (payload) => {
+    const playerId = String(payload?.playerId ?? "");
+    // Discriminated union: validate at runtime, narrow at compile time
+    const rollType: RollType =
+      payload?.rollType === "panic" ? "panic" : "stress";
+    const modifiers = deps.clampInt(payload?.modifiers ?? 0, -10, 10);
+
+    const p = state.players.find((x) => x.id === playerId);
+    if (!p) return;
+    deps.ensurePlayerFields(p);
+
+    const die = deps.d6();
+    const stress = deps.clampInt(p.stress ?? 0, 0, deps.MAX_STRESS);
+    const resolve = deps.clampInt(p.resolve ?? 0, 0, deps.MAX_RESOLVE);
+    const total = die + stress - resolve + modifiers;
+
+    let entry = deps.resolveEntry(rollType, total);
+    let duplicateAdjusted = false;
+    let duplicateNote: string | null = null;
+    let duplicateFromId: string | null = null;
+    let duplicateFromLabel: string | null = null;
+
+    // Panic-specific duplicate handling (discriminated union narrows here)
+    if (
+      rollType === "panic" &&
+      entry?.persistent &&
+      deps.hasLiveEffect(p, entry.id)
+    ) {
+      const bumped = deps.resolveNextHigherDifferentEntry(
+        "panic",
+        total,
+        entry.id,
+      );
+      if (bumped) {
+        duplicateAdjusted = true;
+        duplicateFromId = String(entry.id);
+        duplicateFromLabel = String(entry.label || entry.id);
+        entry = bumped;
+        duplicateNote = `Duplicate result (${duplicateFromLabel}) already active — showing next higher response.`;
+      }
+    }
+
+    const stressDelta = deps.clampInt(entry.stressDelta ?? 0, -10, 10);
+    const applyOptions = Array.isArray(entry.applyOptions)
+      ? entry.applyOptions
+        .map((o: { id?: string; label?: string }) => {
+          const id = String(o?.id ?? "");
+          const ent = deps.getEntryById(rollType, id);
+          if (!ent) return null;
+          return {
+            tableEntryId: ent.id,
+            label: String(o?.label ?? ent.label),
+          };
+        })
+        .filter(Boolean)
+      : null;
+    const timestamp = Date.now();
+    const eventId = deps.newId();
+
+    const rollEvent = {
+      eventId,
+      playerId,
+      rollType,
+      die,
+      stress,
+      resolve,
+      modifiers,
+      total,
+      tableEntryId: entry.id,
+      label: entry.label,
+      description: entry.description,
+      stressDelta,
+      duplicateAdjusted,
+      duplicateFromId,
+      duplicateFromLabel,
+      timestamp,
+    };
+
+    p.lastRollEvent = {
+      type: rollType,
+      eventId,
+      total,
+      die,
+      stress,
+      resolve,
+      modifiers,
+      tableEntryId: entry.id,
+      tableEntryLabel: entry.label,
+      tableEntryDescription: entry.description,
+      tableEntryStressDelta: stressDelta,
+      tableEntryPersistent: entry.persistent,
+      duplicateAdjusted,
+      duplicateFromId,
+      duplicateFromLabel,
+      duplicateNote,
+      applyOptions,
+      appliedTableEntryId: null,
+      appliedTableEntryLabel: null,
+      appliedTableEntryDescription: null,
+      appliedTableEntryStressDelta: null,
+      timestamp,
+      applied: false,
+      appliedEffectId: null,
+      appliedStressDuplicate: false,
+      stressDeltaApplied: false,
+      stressDeltaAppliedValue: null,
+    };
+
+    deps.pushRollEvent(rollEvent);
+    console.log(
+      `[ROLL:${rollType.toUpperCase()}] ${p.name} d6=${die} stress=${stress} resolve=${resolve} mod=${modifiers} => total=${total} (${entry.id})`,
+    );
+
+    deps.addLogEntry(
+      rollType,
+      `${p.name.toUpperCase()} ${rollType.toUpperCase()} ROLL: ${entry.label || entry.id}`,
+      `Rolled ${total} (Die: ${die} + Stress: ${stress} - Resolve: ${resolve} + Mod: ${modifiers})`,
+    );
+
+    deps.broadcast();
+  });
+
+  // roll:apply - lines 514-603
+  socket.on("roll:apply", (payload) => {
+    const playerId = String(payload?.playerId ?? "");
+    const eventId = String(payload?.eventId ?? "");
+    const chosenTableEntryId =
+      payload?.tableEntryId !== undefined ? String(payload.tableEntryId) : null;
+
+    const p = state.players.find((x) => x.id === playerId);
+    if (!p) return;
+    deps.ensurePlayerFields(p);
+
+    const lr = p.lastRollEvent;
+    if (!lr || String(lr.eventId ?? "") !== eventId) return;
+    if (lr.applied) return;
+
+    const rollType: RollType = lr.type === "panic" ? "panic" : "stress";
+    const baseEntry =
+      deps.getEntryById(rollType, lr.tableEntryId) ||
+      deps.resolveEntry(rollType, lr.total);
+
+    let entry = baseEntry;
+    if (chosenTableEntryId) {
+      const allowed = Array.isArray(baseEntry.applyOptions)
+        ? baseEntry.applyOptions.some(
+          (o: { id?: string }) => String(o?.id ?? "") === chosenTableEntryId,
+        )
+        : false;
+      if (allowed) {
+        const picked = deps.getEntryById(rollType, chosenTableEntryId);
+        if (picked) entry = picked;
+      }
+    }
+
+    lr.applied = true;
+    lr.appliedTableEntryId = entry.id;
+    lr.appliedTableEntryLabel = entry.label;
+    lr.appliedTableEntryDescription = entry.description;
+    lr.appliedTableEntryStressDelta = deps.clampInt(
+      entry.stressDelta ?? 0,
+      -10,
+      10,
+    );
+
+    // Stress-specific duplicate handling (discriminated union narrows here)
+    if (
+      rollType === "stress" &&
+      entry.persistent &&
+      deps.hasLiveEffect(p, entry.id)
+    ) {
+      p.stress = deps.clampInt(
+        deps.clampInt(p.stress ?? 0, 0, deps.MAX_STRESS) + 1,
+        0,
+        deps.MAX_STRESS,
+      );
+      lr.appliedEffectId = null;
+      lr.appliedStressDuplicate = true;
+      console.log(
+        `[ROLL:APPLY] ${p.name} stress duplicate=${entry.id} -> stress+1 (stress=${p.stress})`,
+      );
+      deps.addLogEntry(
+        "stress",
+        `${p.name} DUPLICATE STRESS RESULT: +1 STRESS LEVEL (Total: ${p.stress})`,
+      );
+      deps.broadcast();
+      return;
+    }
+
+    if (entry.persistent) {
+      const effect = {
+        id: deps.newId(),
+        type: entry.id,
+        label: entry.label,
+        severity: deps.clampInt(
+          entry.severity ?? (rollType === "panic" ? 4 : 2),
+          1,
+          5,
+        ),
+        createdAt: Date.now(),
+        durationType: "manual" as const,
+        durationValue: entry.durationValue,
+        clearedAt: null,
+      };
+
+      p.activeEffects.push(effect);
+      lr.appliedEffectId = effect.id;
+      console.log(
+        `[ROLL:APPLY] ${p.name} ${rollType} -> effect=${effect.type} (${effect.id})`,
+      );
+      deps.addLogEntry("info", `${p.name} CONDITION APPLIED: ${entry.label}`);
+    } else {
+      lr.appliedEffectId = null;
+      console.log(`[ROLL:APPLY] ${p.name} ${rollType} (no persistent effect)`);
+      deps.addLogEntry("info", `${p.name} RESULT APPLIED: ${entry.label}`);
+    }
+
+    deps.broadcast();
+  });
+
+  // roll:applyStressDelta - lines 605-644
+  socket.on("roll:applyStressDelta", (payload) => {
+    const playerId = String(payload?.playerId ?? "");
+    const eventId = String(payload?.eventId ?? "");
+
+    const p = state.players.find((x) => x.id === playerId);
+    if (!p) return;
+    deps.ensurePlayerFields(p);
+
+    const lr = p.lastRollEvent;
+    if (!lr || String(lr.eventId ?? "") !== eventId) return;
+    if (lr.stressDeltaApplied) return;
+
+    const delta = Number(
+      lr.appliedTableEntryStressDelta !== null &&
+        lr.appliedTableEntryStressDelta !== undefined
+        ? lr.appliedTableEntryStressDelta
+        : lr.tableEntryStressDelta,
+    );
+
+    if (!Number.isFinite(delta) || delta === 0) return;
+
+    const oldStress = p.stress;
+    p.stress = deps.clampInt(
+      deps.clampInt(p.stress ?? 0, 0, deps.MAX_STRESS) + delta,
+      0,
+      deps.MAX_STRESS,
+    );
+    lr.stressDeltaApplied = true;
+    lr.stressDeltaAppliedValue = delta;
+
+    console.log(
+      `[ROLL:APPLY-STRESS] ${p.name} stress ${oldStress} -> ${p.stress} (${delta > 0 ? "+" : ""}${delta})`,
+    );
+    deps.addLogEntry(
+      "stress",
+      `${p.name} STRESS ADJUSTMENT: ${delta > 0 ? "+" : ""}${delta} (Total: ${p.stress})`,
+    );
+    deps.broadcast();
+  });
+
+  // roll:undo - lines 646-701
+  socket.on("roll:undo", (payload) => {
+    const playerId = String(payload?.playerId ?? "");
+    const eventId = String(payload?.eventId ?? "");
+
+    const p = state.players.find((x) => x.id === playerId);
+    if (!p) return;
+    deps.ensurePlayerFields(p);
+
+    const lr = p.lastRollEvent;
+    if (!lr || String(lr.eventId ?? "") !== eventId) return;
+    if (!lr.applied && !lr.stressDeltaApplied) return;
+
+    const hadEffect = Boolean(lr.appliedEffectId);
+
+    if (lr.appliedEffectId) {
+      const eff = p.activeEffects.find((e) => e.id === lr.appliedEffectId);
+      if (eff && !eff.clearedAt) eff.clearedAt = Date.now();
+    }
+
+    if (lr.appliedStressDuplicate) {
+      p.stress = deps.clampInt(
+        deps.clampInt(p.stress ?? 0, 0, deps.MAX_STRESS) - 1,
+        0,
+        deps.MAX_STRESS,
+      );
+      lr.appliedStressDuplicate = false;
+      deps.addLogEntry(
+        "info",
+        `${p.name} UNDO: REVERTED +1 STRESS (Total: ${p.stress})`,
+      );
+    }
+
+    if (lr.stressDeltaApplied && lr.stressDeltaAppliedValue) {
+      const delta = lr.stressDeltaAppliedValue;
+      p.stress = deps.clampInt(
+        deps.clampInt(p.stress ?? 0, 0, deps.MAX_STRESS) - delta,
+        0,
+        deps.MAX_STRESS,
+      );
+      lr.stressDeltaApplied = false;
+      lr.stressDeltaAppliedValue = null;
+      deps.addLogEntry(
+        "info",
+        `${p.name} UNDO: REVERTED STRESS ${delta > 0 ? "+" : ""}${delta} (Total: ${p.stress})`,
+      );
+    }
+
+    lr.applied = false;
+    lr.appliedEffectId = null;
+    lr.appliedTableEntryId = null;
+    lr.appliedTableEntryLabel = null;
+    lr.appliedTableEntryDescription = null;
+    lr.appliedTableEntryStressDelta = null;
+
+    console.log(
+      `[ROLL:UNDO] ${p.name} event=${eventId} (effectCleared=${hadEffect})`,
+    );
+    deps.broadcast();
+  });
+
+  // roll:clear - lines 703-714
+  socket.on("roll:clear", (payload) => {
+    const playerId = String(payload?.playerId ?? "");
+
+    const p = state.players.find((x) => x.id === playerId);
+    if (!p) return;
+
+    p.lastRollEvent = null;
+
+    console.log(`[ROLL:CLEAR] ${p.name} - roll history cleared`);
+    deps.broadcast();
+  });
+}
