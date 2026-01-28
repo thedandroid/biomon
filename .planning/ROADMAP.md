@@ -60,10 +60,10 @@ Plans:
   2. responseTables.ts compiles with typed table entries and const assertions
   3. Existing tests import and pass with typed modules
   4. Functions have explicit parameter and return types
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 03-01: TBD
+- [ ] 03-01-PLAN.md — Convert utils.js and responseTables.js to TypeScript with type annotations
 
 ### Phase 4: Server Infrastructure
 **Goal**: Convert server factory and persistence logic to TypeScript
@@ -118,7 +118,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 |-------|----------------|--------|-----------|
 | 1. Tooling Foundation | 2/2 | Complete | 2026-01-27 |
 | 2. Type Definitions | 1/1 | Complete | 2026-01-27 |
-| 3. Pure Data & Utilities | 0/? | Not started | - |
+| 3. Pure Data & Utilities | 0/1 | Planned | - |
 | 4. Server Infrastructure | 0/? | Not started | - |
 | 5. Event Handler Migration | 0/? | Not started | - |
 | 6. Test Migration & Validation | 0/? | Not started | - |
