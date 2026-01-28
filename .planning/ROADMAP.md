@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Type Definitions** - Central type definitions as contracts between modules
 - [x] **Phase 3: Pure Data & Utilities** - Convert pure functions and data modules
 - [x] **Phase 4: Server Infrastructure** - Convert server factory and add persistence types
-- [ ] **Phase 5: Event Handler Migration** - Extract and type all Socket.io event handlers
+- [ ] **Phase 5: Event Handler Migration** - Extract and type all 18 Socket.io event handlers
 - [ ] **Phase 6: Test Migration & Validation** - Convert test files and validate complete migration
 
 ## Phase Details
