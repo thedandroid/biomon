@@ -12,9 +12,9 @@ export default defineConfig({
         "node_modules/**",
         "public/**",
         "scripts/**",
-        "*.config.js",
+        "*.config.{js,ts}",
       ],
     },
-    include: ["test/**/*.test.{js,ts}"],
+    include: ["test/**/*.test.ts"],
   },
 });
