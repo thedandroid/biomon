@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-27)
 
 **Core value:** Type safety on the server - every Socket.io event payload, every state mutation, every utility function has explicit types that the compiler verifies.
-**Current focus:** Phase 5 Event Handler Migration - In progress
+**Current focus:** Phase 5 Event Handler Migration - Complete
 
 ## Current Position
 
 Phase: 5 of 6 (Event Handler Migration)
-Plan: 3 of 4 in current phase (05-01, 05-02, 05-03 complete)
-Status: In progress
-Last activity: 2026-01-28 - Completed 05-02-PLAN.md
+Plan: 4 of 4 in current phase (05-01, 05-02, 05-03, 05-04 complete)
+Status: Phase complete
+Last activity: 2026-01-28 - Completed 05-04-PLAN.md
 
-Progress: [########--] 80%
+Progress: [#########-] 90%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8
+- Total plans completed: 9
 - Average duration: 2.4 min
-- Total execution time: 20 min
+- Total execution time: 22.6 min
 
 **By Phase:**
 
@@ -31,10 +31,10 @@ Progress: [########--] 80%
 | 02-type-definitions | 1 | 2.3 min | 2.3 min |
 | 03-pure-data-utilities | 1 | 2.7 min | 2.7 min |
 | 04-server-infrastructure | 1 | 1.4 min | 1.4 min |
-| 05-event-handler-migration | 3 | 8.6 min | 2.9 min |
+| 05-event-handler-migration | 4 | 11.2 min | 2.8 min |
 
 **Recent Trend:**
-- Last 5 plans: 04-01 (1.4 min), 05-03 (2.6 min), 05-01 (3 min), 05-02 (3 min)
+- Last 5 plans: 05-01 (3 min), 05-02 (3 min), 05-03 (2.6 min), 05-04 (2.6 min)
 - Trend: consistent execution time on handler extraction
 
 *Updated after each plan completion*
@@ -70,6 +70,8 @@ Recent decisions affecting current work:
 - [05-01]: Preserve all runtime validation from server.js (types are compile-time only)
 - [05-02]: Discriminated union on rollType for type-safe stress vs panic logic
 - [05-02]: Preserved all 53+ defensive programming sites during migration
+- [05-04]: Keep persistence inline in server.ts (per research recommendation)
+- [05-04]: Thin router pattern: 412 LOC vs original 887 LOC
 
 ### Pending Todos
 
@@ -77,10 +79,10 @@ None yet.
 
 ### Blockers/Concerns
 
-None - 05-01, 05-02, 05-03 complete. Ready for 05-04 (server.ts refactor).
+None - Phase 5 complete. Ready for Phase 6 Final Validation.
 
 ## Session Continuity
 
 Last session: 2026-01-28
-Stopped at: Completed 05-02-PLAN.md (Roll Handlers)
+Stopped at: Completed 05-04-PLAN.md (Server.ts Conversion)
 Resume file: None
