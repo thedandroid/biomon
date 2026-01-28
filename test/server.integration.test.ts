@@ -1,10 +1,20 @@
 // Integration tests for Socket.io event handlers
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
-import { io as ioClient } from "socket.io-client";
-import { createServer } from "http";
+import { io as ioClient, type Socket as ClientSocket } from "socket.io-client";
+import { createServer, type Server as HttpServer } from "http";
 import { Server } from "socket.io";
 import express from "express";
-import { resolveEntry, getEntryById } from "../responseTables.js";
+import type {
+  GameState,
+  Player,
+  RollEvent,
+  Effect,
+  LastRollEvent,
+  TableEntry,
+  ClientToServerEvents,
+  ServerToClientEvents,
+} from "../src/types/index.js";
+import { resolveEntry, getEntryById } from "../responseTables.ts";
 import {
   clamp,
   clampInt,
@@ -17,7 +27,11 @@ import {
   MAX_STRESS,
   MAX_RESOLVE,
   ROLL_FEED_CAP,
-} from "../utils.js";
+} from "../utils.ts";
+
+// Typed Socket.IO aliases
+type TypedClientSocket = ClientSocket<ServerToClientEvents, ClientToServerEvents>;
+type TypedServer = Server<ClientToServerEvents, ServerToClientEvents>;
 
 function resolveNextHigherDifferentEntry(rollType, total, currentEntryId) {
   const startId = String(currentEntryId ?? "");
@@ -32,8 +46,10 @@ function resolveNextHigherDifferentEntry(rollType, total, currentEntryId) {
 }
 
 describe("Socket.io integration tests", () => {
-  let io, clientSocket, httpServer;
-  let state;
+  let io: TypedServer;
+  let clientSocket: TypedClientSocket;
+  let httpServer: HttpServer;
+  let state: GameState;
 
   function pushRollEvent(ev) {
     state.rollEvents.push(ev);

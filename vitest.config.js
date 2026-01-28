@@ -15,6 +15,6 @@ export default defineConfig({
         "*.config.js",
       ],
     },
-    include: ["test/**/*.test.js"],
+    include: ["test/**/*.test.{js,ts}"],
   },
 });

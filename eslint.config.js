@@ -131,6 +131,8 @@ export default defineConfig(
       "dist/",
       "*.min.js",
       "public/toast.js",
+      // Temporarily ignored until integration test migration (06-02)
+      "test/server.integration.test.ts",
     ],
   },
 );
