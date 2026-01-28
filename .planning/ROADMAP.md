@@ -17,7 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Pure Data & Utilities** - Convert pure functions and data modules
 - [x] **Phase 4: Server Infrastructure** - Convert server factory and add persistence types
 - [x] **Phase 5: Event Handler Migration** - Extract and type all 18 Socket.io event handlers
-- [ ] **Phase 6: Test Migration & Validation** - Convert test files and validate complete migration
+- [x] **Phase 6: Test Migration & Validation** - Convert test files and validate complete migration
 
 ## Phase Details
 
@@ -110,9 +110,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 06-01-PLAN.md — Migrate unit tests (utils, responseTables, selfcheck) to TypeScript
-- [ ] 06-02-PLAN.md — Migrate server integration tests with typed Socket.IO clients
-- [ ] 06-03-PLAN.md — Migrate external integration tests, update config, final validation
+- [x] 06-01-PLAN.md — Migrate unit tests (utils, responseTables, selfcheck) to TypeScript
+- [x] 06-02-PLAN.md — Migrate server integration tests with typed Socket.IO clients
+- [x] 06-03-PLAN.md — Migrate external integration tests, update config, final validation
 
 ## Progress
 
@@ -126,4 +126,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | 3. Pure Data & Utilities | 1/1 | Complete | 2026-01-28 |
 | 4. Server Infrastructure | 1/1 | Complete | 2026-01-28 |
 | 5. Event Handler Migration | 4/4 | Complete | 2026-01-28 |
-| 6. Test Migration & Validation | 0/3 | Not started | - |
+| 6. Test Migration & Validation | 3/3 | Complete | 2026-01-28 |
