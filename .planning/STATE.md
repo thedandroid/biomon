@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-27)
 ## Current Position
 
 Phase: 5 of 6 (Event Handler Migration)
-Plan: 3 of 4 in current phase
+Plan: 1 of 4 in current phase (05-01 complete, 05-03 previously complete)
 Status: In progress
-Last activity: 2026-01-28 - Completed 05-03-PLAN.md
+Last activity: 2026-01-28 - Completed 05-01-PLAN.md
 
 Progress: [########--] 80%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6
+- Total plans completed: 7
 - Average duration: 2.4 min
-- Total execution time: 14 min
+- Total execution time: 17 min
 
 **By Phase:**
 
@@ -31,10 +31,10 @@ Progress: [########--] 80%
 | 02-type-definitions | 1 | 2.3 min | 2.3 min |
 | 03-pure-data-utilities | 1 | 2.7 min | 2.7 min |
 | 04-server-infrastructure | 1 | 1.4 min | 1.4 min |
-| 05-event-handler-migration | 1 | 2.6 min | 2.6 min |
+| 05-event-handler-migration | 2 | 5.6 min | 2.8 min |
 
 **Recent Trend:**
-- Last 5 plans: 02-01 (2.3 min), 03-01 (2.7 min), 04-01 (1.4 min), 05-03 (2.6 min)
+- Last 5 plans: 03-01 (2.7 min), 04-01 (1.4 min), 05-03 (2.6 min), 05-01 (3 min)
 - Trend: consistent execution time on handler extraction
 
 *Updated after each plan completion*
@@ -66,6 +66,8 @@ Recent decisions affecting current work:
 - [04-01]: Added @types/express as dev dependency for Express type definitions
 - [05-03]: SessionDependencies extends HandlerDependencies for persistence functions
 - [05-03]: External handlers use Pick<> for minimal dependency surface
+- [05-01]: Use dependency injection for all handler utilities and constants
+- [05-01]: Preserve all runtime validation from server.js (types are compile-time only)
 
 ### Pending Todos
 
@@ -73,10 +75,10 @@ None yet.
 
 ### Blockers/Concerns
 
-None - handler extraction complete, ready for server.ts refactor (05-04).
+None - 05-01 and 05-03 complete, ready for 05-02 (roll handlers) and 05-04 (server.ts refactor).
 
 ## Session Continuity
 
 Last session: 2026-01-28
-Stopped at: Completed 05-03-PLAN.md (Effect/Condition/Session/External Handlers)
+Stopped at: Completed 05-01-PLAN.md (Player Handlers)
 Resume file: None
