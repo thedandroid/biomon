@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-27)
 
 **Core value:** Type safety on the server - every Socket.io event payload, every state mutation, every utility function has explicit types that the compiler verifies.
-**Current focus:** Phase 4 Server Infrastructure - Complete
+**Current focus:** Phase 5 Event Handler Migration - In progress
 
 ## Current Position
 
-Phase: 4 of 6 (Server Infrastructure)
-Plan: 1 of 1 in current phase
-Status: Phase complete
-Last activity: 2026-01-28 - Completed 04-01-PLAN.md
+Phase: 5 of 6 (Event Handler Migration)
+Plan: 3 of 4 in current phase
+Status: In progress
+Last activity: 2026-01-28 - Completed 05-03-PLAN.md
 
-Progress: [######----] 60%
+Progress: [########--] 80%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 5
+- Total plans completed: 6
 - Average duration: 2.4 min
-- Total execution time: 11.4 min
+- Total execution time: 14 min
 
 **By Phase:**
 
@@ -31,10 +31,11 @@ Progress: [######----] 60%
 | 02-type-definitions | 1 | 2.3 min | 2.3 min |
 | 03-pure-data-utilities | 1 | 2.7 min | 2.7 min |
 | 04-server-infrastructure | 1 | 1.4 min | 1.4 min |
+| 05-event-handler-migration | 1 | 2.6 min | 2.6 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-02 (3 min), 02-01 (2.3 min), 03-01 (2.7 min), 04-01 (1.4 min)
-- Trend: efficient execution on infrastructure tasks
+- Last 5 plans: 02-01 (2.3 min), 03-01 (2.7 min), 04-01 (1.4 min), 05-03 (2.6 min)
+- Trend: consistent execution time on handler extraction
 
 *Updated after each plan completion*
 
@@ -63,6 +64,8 @@ Recent decisions affecting current work:
 - [03-01]: Const assertion with satisfies for typed data structures
 - [03-01]: Keep all runtime validation (types are compile-time only)
 - [04-01]: Added @types/express as dev dependency for Express type definitions
+- [05-03]: SessionDependencies extends HandlerDependencies for persistence functions
+- [05-03]: External handlers use Pick<> for minimal dependency surface
 
 ### Pending Todos
 
@@ -70,11 +73,10 @@ None yet.
 
 ### Blockers/Concerns
 
-None - Phase 4 complete, ready for Phase 5 (server.js migration).
+None - handler extraction complete, ready for server.ts refactor (05-04).
 
 ## Session Continuity
 
 Last session: 2026-01-28
-Stopped at: Completed 04-01-PLAN.md (Server Infrastructure)
+Stopped at: Completed 05-03-PLAN.md (Effect/Condition/Session/External Handlers)
 Resume file: None
-
