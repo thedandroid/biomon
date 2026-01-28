@@ -84,15 +84,18 @@ Plans:
 **Depends on**: Phase 4
 **Requirements**: TS-SERVER (Convert server.js to TypeScript with strict mode)
 **Success Criteria** (what must be TRUE):
-  1. All 17+ event handlers typed with full payload shapes
+  1. All 18 event handlers typed with full payload shapes
   2. Discriminated unions used for roll types (stress vs panic)
-  3. All runtime validation preserved (52+ optional chaining sites)
-  4. server.ts refactored to thin router (~80 LOC entry point)
+  3. All runtime validation preserved (53+ optional chaining sites)
+  4. server.ts refactored to thin router (~200 LOC entry point)
   5. All existing tests pass
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
-- [ ] 05-01: TBD
+- [ ] 05-01-PLAN.md — Handler infrastructure + player/party handlers (4 events)
+- [ ] 05-02-PLAN.md — Roll handlers with discriminated unions (5 events)
+- [ ] 05-03-PLAN.md — Effect, condition, session, external handlers (9 events)
+- [ ] 05-04-PLAN.md — Server.ts thin router with handler registration
 
 ### Phase 6: Test Migration & Validation
 **Goal**: Convert test files to TypeScript and validate complete migration
@@ -120,5 +123,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | 2. Type Definitions | 1/1 | Complete | 2026-01-27 |
 | 3. Pure Data & Utilities | 1/1 | Complete | 2026-01-28 |
 | 4. Server Infrastructure | 1/1 | Complete | 2026-01-28 |
-| 5. Event Handler Migration | 0/? | Not started | - |
+| 5. Event Handler Migration | 0/4 | Not started | - |
 | 6. Test Migration & Validation | 0/? | Not started | - |
