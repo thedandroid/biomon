@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Type Definitions** - Central type definitions as contracts between modules
 - [x] **Phase 3: Pure Data & Utilities** - Convert pure functions and data modules
 - [x] **Phase 4: Server Infrastructure** - Convert server factory and add persistence types
-- [ ] **Phase 5: Event Handler Migration** - Extract and type all 18 Socket.io event handlers
+- [x] **Phase 5: Event Handler Migration** - Extract and type all 18 Socket.io event handlers
 - [ ] **Phase 6: Test Migration & Validation** - Convert test files and validate complete migration
 
 ## Phase Details
@@ -92,10 +92,10 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 05-01-PLAN.md — Handler infrastructure + player/party handlers (4 events)
-- [ ] 05-02-PLAN.md — Roll handlers with discriminated unions (5 events)
-- [ ] 05-03-PLAN.md — Effect, condition, session, external handlers (9 events)
-- [ ] 05-04-PLAN.md — Server.ts thin router with handler registration
+- [x] 05-01-PLAN.md — Handler infrastructure + player/party handlers (4 events)
+- [x] 05-02-PLAN.md — Roll handlers with discriminated unions (5 events)
+- [x] 05-03-PLAN.md — Effect, condition, session, external handlers (9 events)
+- [x] 05-04-PLAN.md — Server.ts thin router with handler registration
 
 ### Phase 6: Test Migration & Validation
 **Goal**: Convert test files to TypeScript and validate complete migration
@@ -123,5 +123,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | 2. Type Definitions | 1/1 | Complete | 2026-01-27 |
 | 3. Pure Data & Utilities | 1/1 | Complete | 2026-01-28 |
 | 4. Server Infrastructure | 1/1 | Complete | 2026-01-28 |
-| 5. Event Handler Migration | 0/4 | Not started | - |
+| 5. Event Handler Migration | 4/4 | Complete | 2026-01-28 |
 | 6. Test Migration & Validation | 0/? | Not started | - |
