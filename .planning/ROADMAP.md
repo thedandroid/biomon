@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Tooling Foundation** - TypeScript infrastructure without converting source files
 - [x] **Phase 2: Type Definitions** - Central type definitions as contracts between modules
 - [x] **Phase 3: Pure Data & Utilities** - Convert pure functions and data modules
-- [ ] **Phase 4: Server Infrastructure** - Convert server factory and add persistence types
+- [x] **Phase 4: Server Infrastructure** - Convert server factory and add persistence types
 - [ ] **Phase 5: Event Handler Migration** - Extract and type all Socket.io event handlers
 - [ ] **Phase 6: Test Migration & Validation** - Convert test files and validate complete migration
 
@@ -77,7 +77,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 04-01-PLAN.md — Convert createServer.js to TypeScript with typed Socket.io generics
+- [x] 04-01-PLAN.md — Convert createServer.js to TypeScript with typed Socket.io generics
 
 ### Phase 5: Event Handler Migration
 **Goal**: Extract and type all Socket.io event handlers from monolithic server.js
@@ -119,6 +119,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | 1. Tooling Foundation | 2/2 | Complete | 2026-01-27 |
 | 2. Type Definitions | 1/1 | Complete | 2026-01-27 |
 | 3. Pure Data & Utilities | 1/1 | Complete | 2026-01-28 |
-| 4. Server Infrastructure | 0/1 | Not started | - |
+| 4. Server Infrastructure | 1/1 | Complete | 2026-01-28 |
 | 5. Event Handler Migration | 0/? | Not started | - |
 | 6. Test Migration & Validation | 0/? | Not started | - |
