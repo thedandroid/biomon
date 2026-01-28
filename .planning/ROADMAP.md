@@ -106,11 +106,13 @@ Plans:
   2. Full type coverage in tests (no `any`)
   3. pkg executable works correctly (build produces working binary)
   4. External integration tests pass
-  5. No regression in functionality (all 50+ existing tests pass)
-**Plans**: TBD
+  5. No regression in functionality (all 79 existing tests pass)
+**Plans**: 3 plans
 
 Plans:
-- [ ] 06-01: TBD
+- [ ] 06-01-PLAN.md — Migrate unit tests (utils, responseTables, selfcheck) to TypeScript
+- [ ] 06-02-PLAN.md — Migrate server integration tests with typed Socket.IO clients
+- [ ] 06-03-PLAN.md — Migrate external integration tests, update config, final validation
 
 ## Progress
 
@@ -124,4 +126,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | 3. Pure Data & Utilities | 1/1 | Complete | 2026-01-28 |
 | 4. Server Infrastructure | 1/1 | Complete | 2026-01-28 |
 | 5. Event Handler Migration | 4/4 | Complete | 2026-01-28 |
-| 6. Test Migration & Validation | 0/? | Not started | - |
+| 6. Test Migration & Validation | 0/3 | Not started | - |
