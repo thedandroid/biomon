@@ -14,7 +14,7 @@ import type {
   ClientToServerEvents,
   ServerToClientEvents,
 } from "../src/types/index.js";
-import { resolveEntry, getEntryById } from "../responseTables.ts";
+import { resolveEntry, getEntryById } from "../responseTables.js";
 import {
   clamp,
   clampInt,
@@ -27,7 +27,7 @@ import {
   MAX_STRESS,
   MAX_RESOLVE,
   ROLL_FEED_CAP,
-} from "../utils.ts";
+} from "../utils.js";
 
 // Typed Socket.IO aliases
 type TypedClientSocket = ClientSocket<ServerToClientEvents, ClientToServerEvents>;
@@ -36,7 +36,7 @@ type TypedServer = Server<ClientToServerEvents, ServerToClientEvents>;
 function resolveNextHigherDifferentEntry(
   rollType: "stress" | "panic",
   total: number,
-  currentEntryId: string | null
+  currentEntryId: string | null,
 ): TableEntry | null {
   const startId = String(currentEntryId ?? "");
   let t = clampInt(total, -999, 999);
@@ -84,13 +84,14 @@ describe("Socket.io integration tests", () => {
     httpServer = createServer(app);
     io = new Server(httpServer);
 
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       const timeout = setTimeout(() => {
         reject(new Error("Server startup timeout"));
       }, 5000);
 
       httpServer.listen(() => {
-        const port = httpServer.address().port;
+        const address = httpServer.address();
+        const port = typeof address === "object" && address !== null ? address.port : 0;
 
         // Set up Socket.io server handlers
         io.on("connection", (socket) => {
@@ -199,12 +200,12 @@ describe("Socket.io integration tests", () => {
                     label: String(o?.label ?? ent.label),
                   };
                 })
-                .filter(Boolean)
+                .filter((x): x is { tableEntryId: string; label: string } => x !== null)
               : null;
             const timestamp = Date.now();
             const eventId = newId();
 
-            const rollEvent = {
+            const rollEvent: RollEvent = {
               eventId,
               playerId,
               rollType,
@@ -235,6 +236,7 @@ describe("Socket.io integration tests", () => {
               tableEntryLabel: entry.label,
               tableEntryDescription: entry.description,
               tableEntryStressDelta: stressDelta,
+              tableEntryPersistent: entry.persistent,
               duplicateAdjusted,
               duplicateFromId,
               duplicateFromLabel,
@@ -247,6 +249,9 @@ describe("Socket.io integration tests", () => {
               timestamp,
               applied: false,
               appliedEffectId: null,
+              appliedStressDuplicate: false,
+              stressDeltaApplied: false,
+              stressDeltaAppliedValue: null,
             };
 
             pushRollEvent(rollEvent);
@@ -294,13 +299,13 @@ describe("Socket.io integration tests", () => {
             }
 
             if (entry.persistent) {
-              const effect = {
+              const effect: Effect = {
                 id: newId(),
                 type: entry.id,
                 label: entry.label,
                 severity: clampInt(entry.severity ?? (rollType === "panic" ? 4 : 2), 1, 5),
                 createdAt: Date.now(),
-                durationType: String(entry.durationType ?? "manual"),
+                durationType: (entry.durationType ?? "manual") as "manual",
                 durationValue: entry.durationValue,
                 clearedAt: null,
               };
@@ -390,7 +395,7 @@ describe("Socket.io integration tests", () => {
       io.close();
     }
     if (httpServer) {
-      return new Promise((resolve) => {
+      return new Promise<void>((resolve) => {
         httpServer.close(() => resolve());
       });
     }
@@ -415,7 +420,7 @@ describe("Socket.io integration tests", () => {
     it("should add a new player with default values", async () => {
       clientSocket.emit("player:add", { name: "Test Player" });
 
-      const newState = await new Promise((resolve) => {
+      const newState = await new Promise<GameState>((resolve) => {
         clientSocket.once("state", resolve);
       });
 
@@ -438,7 +443,7 @@ describe("Socket.io integration tests", () => {
         resolve: 2,
       });
 
-      const newState = await new Promise((resolve) => {
+      const newState = await new Promise<GameState>((resolve) => {
         clientSocket.once("state", resolve);
       });
 
@@ -454,7 +459,7 @@ describe("Socket.io integration tests", () => {
     it("should handle unnamed player", async () => {
       clientSocket.emit("player:add", { name: "" });
 
-      const newState = await new Promise((resolve) => {
+      const newState = await new Promise<GameState>((resolve) => {
         clientSocket.once("state", resolve);
       });
 
@@ -465,7 +470,7 @@ describe("Socket.io integration tests", () => {
       const longName = "A".repeat(50);
       clientSocket.emit("player:add", { name: longName });
 
-      const newState = await new Promise((resolve) => {
+      const newState = await new Promise<GameState>((resolve) => {
         clientSocket.once("state", resolve);
       });
 
@@ -479,7 +484,7 @@ describe("Socket.io integration tests", () => {
         maxHealth: 15,
       });
 
-      const newState = await new Promise((resolve) => {
+      const newState = await new Promise<GameState>((resolve) => {
         clientSocket.once("state", resolve);
       });
 
@@ -494,7 +499,7 @@ describe("Socket.io integration tests", () => {
         stress: 99,
       });
 
-      const newState = await new Promise((resolve) => {
+      const newState = await new Promise<GameState>((resolve) => {
         clientSocket.once("state", resolve);
       });
 
@@ -517,7 +522,7 @@ describe("Socket.io integration tests", () => {
 
       clientSocket.emit("player:remove", { id: "test-id-123" });
 
-      const newState = await new Promise((resolve) => {
+      const newState = await new Promise<GameState>((resolve) => {
         clientSocket.once("state", resolve);
       });
 
@@ -550,7 +555,7 @@ describe("Socket.io integration tests", () => {
 
       clientSocket.emit("player:remove", { id: "player-1" });
 
-      const newState = await new Promise((resolve) => {
+      const newState = await new Promise<GameState>((resolve) => {
         clientSocket.once("state", resolve);
       });
 
@@ -579,7 +584,7 @@ describe("Socket.io integration tests", () => {
         name: "Updated Name",
       });
 
-      const newState = await new Promise((resolve) => {
+      const newState = await new Promise<GameState>((resolve) => {
         clientSocket.once("state", resolve);
       });
 
@@ -592,7 +597,7 @@ describe("Socket.io integration tests", () => {
         health: 2,
       });
 
-      const newState = await new Promise((resolve) => {
+      const newState = await new Promise<GameState>((resolve) => {
         clientSocket.once("state", resolve);
       });
 
@@ -605,7 +610,7 @@ describe("Socket.io integration tests", () => {
         stress: 7,
       });
 
-      const newState = await new Promise((resolve) => {
+      const newState = await new Promise<GameState>((resolve) => {
         clientSocket.once("state", resolve);
       });
 
@@ -618,7 +623,7 @@ describe("Socket.io integration tests", () => {
         maxHealth: 3,
       });
 
-      const newState = await new Promise((resolve) => {
+      const newState = await new Promise<GameState>((resolve) => {
         clientSocket.once("state", resolve);
       });
 
@@ -650,11 +655,11 @@ describe("Socket.io integration tests", () => {
         activeEffects: [],
         lastRollEvent: null,
       });
-      state.rollEvents.push({ eventId: "test-event" });
+      state.rollEvents.push({ eventId: "test-event" } as RollEvent);
 
       clientSocket.emit("party:clear");
 
-      const newState = await new Promise((resolve) => {
+      const newState = await new Promise<GameState>((resolve) => {
         clientSocket.once("state", resolve);
       });
 
@@ -684,17 +689,17 @@ describe("Socket.io integration tests", () => {
         modifiers: 0,
       });
 
-      const newState = await new Promise((resolve) => {
+      const newState = await new Promise<GameState>((resolve) => {
         clientSocket.once("state", resolve);
       });
 
       const player = newState.players[0];
       expect(player.lastRollEvent).toBeDefined();
-      expect(player.lastRollEvent.type).toBe("stress");
-      expect(player.lastRollEvent.die).toBeGreaterThanOrEqual(1);
-      expect(player.lastRollEvent.die).toBeLessThanOrEqual(6);
-      expect(player.lastRollEvent.stress).toBe(3);
-      expect(player.lastRollEvent.resolve).toBe(1);
+      expect(player.lastRollEvent!.type).toBe("stress");
+      expect(player.lastRollEvent!.die).toBeGreaterThanOrEqual(1);
+      expect(player.lastRollEvent!.die).toBeLessThanOrEqual(6);
+      expect(player.lastRollEvent!.stress).toBe(3);
+      expect(player.lastRollEvent!.resolve).toBe(1);
       expect(newState.rollEvents).toHaveLength(1);
     });
 
@@ -705,14 +710,14 @@ describe("Socket.io integration tests", () => {
         modifiers: 2,
       });
 
-      const newState = await new Promise((resolve) => {
+      const newState = await new Promise<GameState>((resolve) => {
         clientSocket.once("state", resolve);
       });
 
       const player = newState.players[0];
       expect(player.lastRollEvent).toBeDefined();
-      expect(player.lastRollEvent.type).toBe("panic");
-      expect(player.lastRollEvent.modifiers).toBe(2);
+      expect(player.lastRollEvent!.type).toBe("panic");
+      expect(player.lastRollEvent!.modifiers).toBe(2);
     });
 
     it("should not create roll for non-existent player", async () => {
@@ -729,7 +734,36 @@ describe("Socket.io integration tests", () => {
 
   describe("roll:apply", () => {
     beforeEach(() => {
-      const player = {
+      const lastRollEvent: LastRollEvent = {
+        type: "stress",
+        eventId: "test-event-123",
+        total: 5,
+        die: 5,
+        stress: 5,
+        resolve: 0,
+        modifiers: 0,
+        tableEntryId: "stress_frantic",
+        tableEntryLabel: "Frantic",
+        tableEntryDescription: "Test description",
+        tableEntryStressDelta: 0,
+        tableEntryPersistent: true,
+        duplicateAdjusted: false,
+        duplicateFromId: null,
+        duplicateFromLabel: null,
+        duplicateNote: null,
+        applyOptions: null,
+        appliedTableEntryId: null,
+        appliedTableEntryLabel: null,
+        appliedTableEntryDescription: null,
+        appliedTableEntryStressDelta: null,
+        timestamp: Date.now(),
+        applied: false,
+        appliedEffectId: null,
+        appliedStressDuplicate: false,
+        stressDeltaApplied: false,
+        stressDeltaAppliedValue: null,
+      };
+      const player: Player = {
         id: "test-player",
         name: "Test Player",
         health: 5,
@@ -737,31 +771,7 @@ describe("Socket.io integration tests", () => {
         stress: 5,
         resolve: 0,
         activeEffects: [],
-        lastRollEvent: {
-          type: "stress",
-          eventId: "test-event-123",
-          total: 5,
-          die: 5,
-          stress: 5,
-          resolve: 0,
-          modifiers: 0,
-          tableEntryId: "stress_frantic",
-          tableEntryLabel: "Frantic",
-          tableEntryDescription: "Test description",
-          tableEntryStressDelta: 0,
-          duplicateAdjusted: false,
-          duplicateFromId: null,
-          duplicateFromLabel: null,
-          duplicateNote: null,
-          applyOptions: null,
-          appliedTableEntryId: null,
-          appliedTableEntryLabel: null,
-          appliedTableEntryDescription: null,
-          appliedTableEntryStressDelta: null,
-          timestamp: Date.now(),
-          applied: false,
-          appliedEffectId: null,
-        },
+        lastRollEvent,
       };
       state.players.push(player);
     });
@@ -772,17 +782,17 @@ describe("Socket.io integration tests", () => {
         eventId: "test-event-123",
       });
 
-      const newState = await new Promise((resolve) => {
+      const newState = await new Promise<GameState>((resolve) => {
         clientSocket.once("state", resolve);
       });
 
       const player = newState.players[0];
-      expect(player.lastRollEvent.applied).toBe(true);
+      expect(player.lastRollEvent!.applied).toBe(true);
       expect(player.activeEffects.length).toBeGreaterThan(0);
     });
 
     it("should not re-apply an already applied roll", async () => {
-      state.players[0].lastRollEvent.applied = true;
+      state.players[0].lastRollEvent!.applied = true;
       const effectCountBefore = state.players[0].activeEffects.length;
 
       clientSocket.emit("roll:apply", {
@@ -825,7 +835,7 @@ describe("Socket.io integration tests", () => {
         effectId: "effect-123",
       });
 
-      const newState = await new Promise((resolve) => {
+      const newState = await new Promise<GameState>((resolve) => {
         clientSocket.once("state", resolve);
       });
 

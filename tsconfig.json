@@ -16,5 +16,5 @@
     "declarationDir": "./dist/types"
   },
   "include": ["src/**/*", "*.js", "*.ts", "test/**/*"],
-  "exclude": ["node_modules", "dist", "coverage", "public", "test/server.integration.test.ts"]
+  "exclude": ["node_modules", "dist", "coverage", "public"]
 }
