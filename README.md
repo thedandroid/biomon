@@ -273,7 +273,7 @@ npm run test:coverage    # Coverage report
 npm run test:ui          # Interactive UI
 ```
 
-**Test Framework**: Vitest with 67 tests covering utilities, table logic, and Socket.io integration.
+**Test Framework**: Vitest with 79 tests covering utilities, table logic, and Socket.io integration.
 
 ### Building the Standalone App
 
@@ -295,10 +295,9 @@ The executable requires the `public/` folder to be in the same directory.
 ## Tech Stack
 
 - **Backend**: Node.js, Express v5, Socket.io v4
+- **Backend TypeScript**: Server code in TypeScript with strict mode (src/)
 - **Frontend**: Vanilla JavaScript (no frameworks), HTML5, CSS3
 - **Persistence**: File-based JSON storage (auto-save + campaigns)
-- **No TypeScript**: Pure JavaScript implementation
-- **No Build Tools**: Static file serving
 - **No Database**: Simple JSON files for state
 
 ---
@@ -307,9 +306,25 @@ The executable requires the `public/` folder to be in the same directory.
 
 ```
 biomon/
-├── server.js              # Express/Socket.io server
-├── responseTables.js      # Stress & Panic table definitions
-├── utils.js               # Shared utility functions
+├── server.ts              # Express/Socket.io server (TypeScript)
+├── createServer.ts        # Typed server factory
+├── responseTables.ts      # Stress & Panic table definitions (TypeScript)
+├── utils.ts               # Shared utility functions (TypeScript)
+├── src/                   # TypeScript source code
+│   ├── types/            # Type definitions
+│   │   ├── state.ts      # GameState, Player types
+│   │   ├── events.ts     # Socket.io event maps
+│   │   ├── tables.ts     # Table entry types
+│   │   └── index.ts      # Type exports
+│   └── handlers/         # Socket.io event handlers
+│       ├── playerHandlers.ts    # Player management
+│       ├── sessionHandlers.ts   # Session save/load
+│       ├── effectHandlers.ts    # Effect management
+│       ├── conditionHandlers.ts # Fatigue/conditions
+│       ├── rollHandlers.ts      # Stress/panic rolls
+│       ├── externalHandlers.ts  # External integration
+│       ├── types.ts             # Handler types
+│       └── index.ts             # Handler exports
 ├── sessions/              # Saved game state (gitignored)
 │   ├── autosave.json     # Auto-saved state
 │   └── campaign-*.json   # Named campaign saves
@@ -319,7 +334,7 @@ biomon/
 │   ├── player.html       # Player view
 │   ├── player.js         # Player logic + ECG animation
 │   └── styles.css        # Medical console theming
-└── test/                  # Test suite
+└── test/                  # Test suite (TypeScript)
 ```
 
 ---
