@@ -21,6 +21,9 @@ jobs:
           - os: macos-latest
             target: node18-macos-x64
             artifact: biomon-macos-x64
+          - os: macos-latest
+            target: node18-macos-arm64
+            artifact: biomon-macos-arm64
           - os: windows-latest
             target: node18-win-x64
             artifact: biomon-win-x64.exe
@@ -45,7 +48,7 @@ jobs:
         run: npm test
 
       - name: Build executable
-        run: node build.js && npx pkg dist/server.bundled.cjs --targets ${{ matrix.target }} --output dist/${{ matrix.artifact }}
+        run: node build.js && npx pkg . --targets ${{ matrix.target }} --output dist/${{ matrix.artifact }}
 
       - name: Package with public folder (Windows)
         if: matrix.os == 'windows-latest'

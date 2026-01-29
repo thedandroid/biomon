@@ -4,17 +4,16 @@
   "description": "BIOMON - Biological Monitoring System for Alien RPG. Real-time crew vitals and stress tracking with external integration support.",
   "type": "module",
   "main": "server.js",
-  "bin": "server.cjs",
+  "bin": "dist/server.bundled.cjs",
   "scripts": {
     "start": "node server.js",
     "dev": "tsx watch server.js",
     "typecheck": "tsc --noEmit",
-    "selfcheck": "node scripts/selfcheck.js",
     "test": "vitest run",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest --coverage",
     "test:ui": "vitest --ui",
-    "build": "npm run typecheck && node build.js && pkg dist/server.bundled.cjs --targets node18-win-x64 --output dist/biomon",
+    "build": "npm run typecheck && node build.js && pkg .",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "prepare": "husky"
@@ -23,11 +22,8 @@
     "assets": [
       "dist/public/**/*"
     ],
-    "scripts": [
-      "dist/server.bundled.cjs"
-    ],
     "targets": [
-      "node18-win-x64"
+      "node18"
     ],
     "outputPath": "dist"
   },

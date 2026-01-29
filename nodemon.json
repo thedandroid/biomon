@@ -1,8 +1,0 @@
-{
-  "watch": ["*.js", "public/**/*"],
-  "ignore": ["sessions/**", "test/**", "node_modules/**"],
-  "ext": "js,html,css",
-  "env": {
-    "NODE_ENV": "development"
-  }
-}
