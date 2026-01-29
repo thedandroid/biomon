@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-01-28)
 Phase: 6 of 6 (Test Migration & Validation)
 Plan: 3 of 3 in current phase (all complete)
 Status: MILESTONE COMPLETE
-Last activity: 2026-01-28 — Completed quick task 001: Bump version to v1.0.6
+Last activity: 2026-01-29 — Completed quick task 002: Update README with TypeScript migration
 
 Progress: [##########] 100%
 
@@ -58,6 +58,7 @@ All 6 phases executed successfully:
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 001 | Bump version to v1.0.6 | 2026-01-28 | e7754ef | [001-bump-version-to-v1-0-6](./quick/001-bump-version-to-v1-0-6/) |
+| 002 | Update README with TypeScript migration | 2026-01-29 | 61b1cb6 | [002-update-readme-typescript-migration](./quick/002-update-readme-typescript-migration/) |
 
 ## Next Steps
 
