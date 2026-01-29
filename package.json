@@ -1,6 +1,6 @@
 {
   "name": "biomon",
-  "version": "1.0.0",
+  "version": "1.0.6",
   "description": "BIOMON - Biological Monitoring System for Alien RPG. Real-time crew vitals and stress tracking with external integration support.",
   "type": "module",
   "main": "server.js",
