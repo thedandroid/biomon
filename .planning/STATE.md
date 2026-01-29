@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-01-28)
 Phase: 6 of 6 (Test Migration & Validation)
 Plan: 3 of 3 in current phase (all complete)
 Status: MILESTONE COMPLETE
-Last activity: 2026-01-28 — v1.0 milestone shipped
+Last activity: 2026-01-28 — Completed quick task 001: Bump version to v1.0.6
 
 Progress: [##########] 100%
 
@@ -52,6 +52,12 @@ All 6 phases executed successfully:
 - 06-test-migration-validation: All 79 tests migrated to TypeScript
 
 **Result:** Full type safety on the server with strict mode enabled. Build and tests passing.
+
+## Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 001 | Bump version to v1.0.6 | 2026-01-28 | e7754ef | [001-bump-version-to-v1-0-6](./quick/001-bump-version-to-v1-0-6/) |
 
 ## Next Steps
 
